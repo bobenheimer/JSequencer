@@ -1,12 +1,30 @@
-var Poo = function() {
+
+
+var TrackBuilder = function() {
     this.audiolet = new Audiolet();
-    this.durationPattern = [1];
-    this.frequencyPattern = [440];
+    this.durationPattern = [];
+    this.frequencyPattern = [];
+    this.beatPattern = [];
     this.currentPosition = 0;//current pointer position
-    this.lastBeat = 0; //last beat of the last note so far (=map + durationpattern 
-    
-    
+    this.lastBeat = 0; //last beat of the last note so far (=map + durationpattern   
 }
+
+
+/**
+ * []
+ * [1]
+ * [1, 2] 
+ * 
+ * 
+ * case 1: beatNumber is the next beat (beatNumber = lastbeat)
+ * case 2: beatNumber is past the next beat (beatNumber > lastbeat)
+ * case 3: beatNumber is somewhere in between and doesnt overlap
+ *  a. beatNumber is right after another beat somewhere and right before
+ *  b. beatNumber is not right after another beat but is right before another
+ *  c. beatNumber is right after anther beat somewhere but not right before the next
+ *  d. beatNumber does not touch either
+ * case 4: beatNumber is somewhere in  between and does overlap another note (throw exception for now)
+ */
 
 /**
  * Add a single note to the track
@@ -14,34 +32,74 @@ var Poo = function() {
  * @param beatNumber
  * @param noteLength
  */
-Poo.prototype.addNote = function(frequency, beatNumber, noteLength) {
-    
+TrackBuilder.prototype.addNote = function(frequency, beatNumber, noteLength) {
+    var beatDiff = beatNumber - this.lastBeat;
+    if (beatDiff == 0) {
+        this.update(frequency, beatNumber, noteLength, this.durationPattern.length, true, true);
+    }
+    else if (beatDiff > 0) {
+        this.update(0, beatNumber, beatDiff, this.durationPattern.length, true, true);
+        this.update(frequency, beatNumber, noteLength, this.durationPattern.length, true, true);   
+    }
+    else {
+        var beatIndex = this.beatPattern.indexOf(beatNumber);
+        if (beatIndex == false) {
+            //I'LL DO THIS SHIT LATER
+        }
+        else { //check if the note placement is empty
+            var leftOverRest = this.durationPattern[beatIndex] - noteLength;  
+            if (this.frequencyPattern[beatIndex] == 0) {
+                if (leftOverRest == 0) {
+                    this.update(frequency, beatNumber, noteLength, beatIndex, false, false);
+                }
+                
+            }
+        }
+
+    }
 }
 
-Poo.prototype.changeTempo = function(newTempo) {
+TrackBuilder.prototype.update = function(frequency, beatNumber, noteLength, index, updateBeatPattern, updateLastBeat) {
+    if (updateBeatPattern) {
+        if (this.beatPattern.length > 0) {
+            this.beatPattern[index] = this.beatPattern[index - 1] + this.durationPattern[index - 1];            
+        }
+        else {
+            this.beatPattern[0] = 0;            
+        }
+    } 
+    this.durationPattern[index] = noteLength;
+    this.frequencyPattern[index] = frequency;
+    if (updateLastBeat) {
+        this.lastBeat += noteLength;
+    }
+
+}
+
+TrackBuilder.prototype.changeTempo = function(newTempo) {
     this.audiolet.scheduler.setTempo(newTempo);
 }
 
 /**
  * Remove note given ???
  */
-Poo.prototype.removeNote = function() {
+TrackBuilder.prototype.removeNote = function() {
     
 }
 
 /**
  * Play the song
  */
-Poo.prototype.play = function() {
+TrackBuilder.prototype.play = function() {
     this.playHighSynth();
 }
 
 
-Poo.prototype.playHighSynth = function() {
+TrackBuilder.prototype.playHighSynth = function() {
     this.highSynth = new HighSynth(this.audiolet);
     this.highSynth.connect(this.audiolet.output);
-    var durationPattern = new PSequence([this.durationPattern], 1);
-    var frequencyPattern = new PSequence([this.frequencyPattern], 1);
+    var durationPattern = new PSequence(this.durationPattern, 1);
+    var frequencyPattern = new PSequence(this.frequencyPattern, 1);
     this.audiolet.scheduler.play([frequencyPattern], durationPattern,
         function(frequency) {
             this.highSynth.trigger.trigger.setValue(1);
@@ -93,5 +151,3 @@ var HighSynth = function(audiolet, frequency) {
 }
 extend(HighSynth, AudioletGroup);
 
-poo = new Poo();
-poo.play();
