@@ -2,29 +2,8 @@
 
 var TrackBuilder = function() {
     this.audiolet = new Audiolet();
-    this.durationPattern = [];
-    this.frequencyPattern = [];
-    this.beatPattern = [];
-    this.currentPosition = 0;//current pointer position
-    this.lastBeat = 0; //last beat of the last note so far (=map + durationpattern   
+    this.notes = [];
 }
-
-
-/**
- * []
- * [1]
- * [1, 2] 
- * 
- * 
- * case 1: beatNumber is the next beat (beatNumber = lastbeat)
- * case 2: beatNumber is past the next beat (beatNumber > lastbeat)
- * case 3: beatNumber is somewhere in between and doesnt overlap
- *  a. beatNumber is right after another beat somewhere and right before
- *  b. beatNumber is not right after another beat but is right before another
- *  c. beatNumber is right after anther beat somewhere but not right before the next
- *  d. beatNumber does not touch either
- * case 4: beatNumber is somewhere in  between and does overlap another note (throw exception for now)
- */
 
 /**
  * Add a single note to the track
@@ -32,48 +11,16 @@ var TrackBuilder = function() {
  * @param beatNumber
  * @param noteLength
  */
-TrackBuilder.prototype.addNote = function(frequency, beatNumber, noteLength) {
-    var beatDiff = beatNumber - this.lastBeat;
-    if (beatDiff == 0) {
-        this.update(frequency, beatNumber, noteLength, this.durationPattern.length, true, true);
-    }
-    else if (beatDiff > 0) {
-        this.update(0, beatNumber, beatDiff, this.durationPattern.length, true, true);
-        this.update(frequency, beatNumber, noteLength, this.durationPattern.length, true, true);   
-    }
-    else {
-        var beatIndex = this.beatPattern.indexOf(beatNumber);
-        if (beatIndex == false) {
-            //I'LL DO THIS SHIT LATER
+TrackBuilder.prototype.addNote = function(note) {
+    //binary search tree seems kind of overkill for now
+    for (var i = 0; i < this.notes.length; i++) {
+        if (this.notes[i].beat >= note.beat) {
+            this.notes.splice(i, 0, note);
+            return note;
         }
-        else { //check if the note placement is empty
-            var leftOverRest = this.durationPattern[beatIndex] - noteLength;  
-            if (this.frequencyPattern[beatIndex] == 0) {
-                if (leftOverRest == 0) {
-                    this.update(frequency, beatNumber, noteLength, beatIndex, false, false);
-                }
-                
-            }
-        }
-
     }
-}
-
-TrackBuilder.prototype.update = function(frequency, beatNumber, noteLength, index, updateBeatPattern, updateLastBeat) {
-    if (updateBeatPattern) {
-        if (this.beatPattern.length > 0) {
-            this.beatPattern[index] = this.beatPattern[index - 1] + this.durationPattern[index - 1];            
-        }
-        else {
-            this.beatPattern[0] = 0;            
-        }
-    } 
-    this.durationPattern[index] = noteLength;
-    this.frequencyPattern[index] = frequency;
-    if (updateLastBeat) {
-        this.lastBeat += noteLength;
-    }
-
+    this.notes[this.notes.length] = note;
+    return note;
 }
 
 TrackBuilder.prototype.changeTempo = function(newTempo) {
@@ -81,7 +28,7 @@ TrackBuilder.prototype.changeTempo = function(newTempo) {
 }
 
 /**
- * Remove note given ???
+ * Remove note given
  */
 TrackBuilder.prototype.removeNote = function() {
     
@@ -91,63 +38,47 @@ TrackBuilder.prototype.removeNote = function() {
  * Play the song
  */
 TrackBuilder.prototype.play = function() {
-    this.playHighSynth();
+    for (var i = 0; i < this.notes.length; i++) {
+        this.audiolet.scheduler.addRelative(this.notes[i].beat, this.playNote.bind(this, this.notes[i].frequency));
+    }
 }
 
+TrackBuilder.prototype.playNote = function(frequency) {
+    var synth = new Synth(this.audiolet, frequency);
+    synth.connect(this.audiolet.output);  
+}
 
-TrackBuilder.prototype.playHighSynth = function() {
-    this.highSynth = new HighSynth(this.audiolet);
-    this.highSynth.connect(this.audiolet.output);
-    var durationPattern = new PSequence(this.durationPattern, 1);
-    var frequencyPattern = new PSequence(this.frequencyPattern, 1);
-    this.audiolet.scheduler.play([frequencyPattern], durationPattern,
-        function(frequency) {
-            this.highSynth.trigger.trigger.setValue(1);
-            this.highSynth.triangle.frequency.setValue(frequency);
+var Note = function(frequency, beat, length) {
+    this.frequency = frequency;
+    this.beat = beat;
+    this.length = length;    
+}
+
+Note.prototype.toString = function() {
+    return "frequency:" + this.frequency + " beat: " + this.beat + " length: " + this.length; 
+}
+
+var Synth = function(audiolet, frequency, attack, release ) {
+    AudioletGroup.apply(this, [audiolet, 0, 1]);
+    // Basic wave
+    this.sine = new Sine(audiolet, frequency);
+    
+    // Gain envelope
+    this.gain = new Gain(audiolet);
+    this.env = new PercussiveEnvelope(audiolet, 1, 0.01, .55,
+        function() {
+            this.audiolet.scheduler.addRelative(0, this.remove.bind(this));
         }.bind(this)
     );
+    this.envMulAdd = new MulAdd(audiolet, 0.2, 0);
+
+    // Main signal path
+    this.sine.connect(this.gain);
+    this.gain.connect(this.outputs[0]);
+
+    // Envelope
+    this.env.connect(this.envMulAdd);
+    this.envMulAdd.connect(this.gain, 0, 1);
 }
-
-var HighSynth = function(audiolet, frequency) {
-    AudioletGroup.call(this, audiolet, 0, 1);
-
-    // Triangle base oscillator
-    this.triangle = new Triangle(audiolet, frequency);
-
-    // Note on trigger
-    this.trigger = new TriggerControl(audiolet);
-
-    // Gain envelope
-    this.gainEnv = new PercussiveEnvelope(audiolet, 0, 0.1, 0.15);
-    this.gainEnvMulAdd = new MulAdd(audiolet, 0.1);
-    this.gain = new Gain(audiolet);
-
-    // Feedback delay
-    this.delay = new Delay(audiolet, 0.1, 0.1);
-    this.feedbackLimiter = new Gain(audiolet, 0.5);
-
-    // Stereo panner
-    this.pan = new Pan(audiolet);
-    this.panLFO = new Sine(audiolet, 1 / 8);
-
-    // Connect oscillator
-    this.triangle.connect(this.gain);
-
-    // Connect trigger and envelope
-    this.trigger.connect(this.gainEnv);
-    this.gainEnv.connect(this.gainEnvMulAdd);
-    this.gainEnvMulAdd.connect(this.gain, 0, 1);
-    this.gain.connect(this.delay);
-
-    // Connect delay
-    this.delay.connect(this.feedbackLimiter);
-    this.feedbackLimiter.connect(this.delay);
-    this.gain.connect(this.pan);
-    this.delay.connect(this.pan);
-
-    // Connect panner
-    this.panLFO.connect(this.pan, 0, 1);
-    this.pan.connect(this.outputs[0]);
-}
-extend(HighSynth, AudioletGroup);
+extend(Synth, AudioletGroup);
 
