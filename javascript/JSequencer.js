@@ -1,16 +1,20 @@
-var TrackBuilder = function(instrument) {
-    this.audiolet = new Audiolet();
+/**
+ * A track has notes, an instrument, and methods to remove and add Notes
+ * @param instrument The instrument used in the track
+ */
+var Track = function(audiolet, instrument) {
+    this.audiolet = audiolet;
     this.notes = [];
     this.instrument = instrument;
 }
 
 /**
  * Add a single note to the track
- * @param frequency
- * @param beatNumber
- * @param noteLength
+ * @param {Number} frequency The note's frequency
+ * @param {Number} beatNumber The beat number the note starts on
+ * @param {Number} noteLength The length of the note in Beats
  */
-TrackBuilder.prototype.addNote = function(note) {
+Track.prototype.addNote = function(note) {
     //binary search tree seems kind of overkill for now
     for (var i = 0; i < this.notes.length; i++) {
         if (this.notes[i].beat >= note.beat) {
@@ -22,14 +26,11 @@ TrackBuilder.prototype.addNote = function(note) {
     return note;
 }
 
-TrackBuilder.prototype.changeTempo = function(newTempo) {
-    this.audiolet.scheduler.setTempo(newTempo);
-}
-
 /**
- * Remove note given
+ * Remove the given note
+ * @param {note} note The note to remove
  */
-TrackBuilder.prototype.removeNote = function(note) {   
+Track.prototype.removeNote = function(note) {  
     //binary search tree seems kind of overkill for now
     for (var i = 0; i < this.notes.length; i++) {
         if (this.notes[i] == note) {
@@ -42,88 +43,88 @@ TrackBuilder.prototype.removeNote = function(note) {
 /**
  * Play the song
  * may want to add startbeat as an instance variable or something and then have a setter function
+ * @param {Number} beat The beat of the song to start at
  */
-TrackBuilder.prototype.play = function(beat) {
-	var difference = 0, start = 0;
-	if(beat > this.notes[this.notes.length - 1].beat) {
-		start = this.notes.length;
-	}
-	else if(beat) {
-		var i = 0;
-		while(beat > this.notes[i].beat) {
-			i++;
-			//console.log(i);
-		}
-		//console.log(i);
-		start = i;
-		difference = this.notes[i].beat - beat;
-		console.log(difference);
-	}
-	for (var i = start; i < this.notes.length; i++) {
-	    this.audiolet.scheduler.addRelative(difference + 
-	    		this.notes[i].beat, this.playNote.bind(this, this.notes[i]));
-	}
+Track.prototype.play = function(beat) {
+    var startNote;
+    if (beat != undefined) {
+        startNote = this.findBeatIndex(beat);  
+        if (startNote == this.notes.length) {
+            return;
+        }
+        //offset = this.notes[startNote].beat - beat;
+    }
+    else {
+        startNote = 0;
+        beat = 0;
+        //offset = 0;
+    }
+    //console.log(offset);
+    for (var i = startNote; i < this.notes.length; i++) {
+        this.audiolet.scheduler.addRelative(this.notes[i].beat - beat, this.playNote.bind(this, this.notes[i]));
+    }    
 }
 
-TrackBuilder.prototype.playNote = function(note) {
-    var note = new this.instrument(this.audiolet, note.frequency, note.duration);
-    note.connect(this.audiolet.output);
+Track.prototype.playNote = function(note) {
+    var noteToPlay = new this.instrument(this.audiolet, note.frequency, note.duration, note.volume);
+    noteToPlay.connect(this.audiolet.output);
 }
 
 /**
  * Get the index where the Beat should be
+ * @param {Number} beat The beat 
  */
-TrackBuilder.prototype.getBeatIndex = function(beat) {
-	for (var i = 0; i < this.notes.length; i++) {
-		
+Track.prototype.findBeatIndex = function(beat) {
+    var i;
+	for (i = 0; i < this.notes.length; i++) {
+		if (beat <= this.notes[i].beat) {
+            return i;		    
+		}
 	}
+	return i;
 }
 
-var Note = function(frequency, beat, duration) {
+/**
+ * A note consists of a frequency, a beat, and a duration
+ * @param {Number} frequency
+ * @param {Number} beat 
+ * @param {Number} duration
+ */
+var Note = function(frequency, beat, duration, volume) {
     this.frequency = frequency;
     this.beat = beat;
-    this.duration = duration;    
+    this.duration = duration; 
+    this.volume = volume;
 }
 
 Note.prototype.toString = function() {
     return "frequency:" + this.frequency + " beat: " + this.beat + " duration: " + this.duration; 
 }
 
+/**
+ * A Song contains 0 or more tracks, a tempo
+ */
 var Song = function() {
+    this.audiolet = new Audiolet();
 	this.tempo = 100;
 	this.tracks = [];
 }
 
-Song.prototype.play = function() {
+Song.prototype.createTrack = function(instrument) {
+    this.tracks[this.tracks.length] = new Track(this.audiolet, instrument);
+}
+
+/**
+ * Change the tempo of the track
+ * @param newTempo New tempo
+ */
+Song.prototype.changeTempo  = function(newTempo) {
+    this.audiolet.scheduler.setTempo(newTempo);
+}
+
+Song.prototype.play = function(beat) {
 	for (var i = 0; i < this.tracks.length; i++) {
-		//add i guess
+		this.tracks[i].play(beat);
 	}
 }
 
-
-var Synth1 = function(audiolet, frequency, duration) {
-    AudioletGroup.apply(this, [audiolet, 0, 1]);
-    // Basic wave
-    var attack = 0.01;
-    var release = 0.5 * duration;
-    console.log(release);
-    this.sine = new Sine(audiolet, frequency);
-    
-    // Gain envelope
-    this.gain = new Gain(audiolet);
-    this.env = new PercussiveEnvelope(audiolet, 1, 0.01, release,
-        function() {
-            audiolet.scheduler.addRelative(0, this.remove.bind(this));
-        }.bind(this)
-    );
-    this.envMulAdd = new MulAdd(audiolet, 0.2, 0);
-
-    // Main signal path
-    this.sine.connect(this.gain);
-    this.gain.connect(this.outputs[0]);
-
-    // Envelope
-    this.env.connect(this.envMulAdd);
-    this.envMulAdd.connect(this.gain, 0, 1);
-}
-extend(Synth1, AudioletGroup);
