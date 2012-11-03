@@ -66,4 +66,4 @@ for (var i = 0; i < notes.length; i++) {
 
 //track1.changeTempo(140);
 song.changeTempo(300);
-song.play();
+//song.play();
