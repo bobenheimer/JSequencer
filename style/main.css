@@ -1,19 +1,19 @@
 @CHARSET "ISO-8859-1";
 
 body {
-    width: 98%;
+
 
 }
 
 
 #main {
-    height: 800px;
-    margin: 75px;
-    border: 1px black solid;
+    margin-bottom: 150px;
+    height: 2080px;
 }
 
 #piano {
     position: relative;
+    width: 100%;
 }
 
 #sequencer {
@@ -35,4 +35,17 @@ body {
     top: 0;
     z-index: 1;
 
+}
+
+footer {
+    position: fixed;
+    height: 150px;
+    width: 100%;
+    bottom: 0;
+    background-color: #B4CDCD;
+ z-index: 2;
+}
+
+.poo {
+        text-align: center;
 }
