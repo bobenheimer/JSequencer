@@ -30,10 +30,10 @@ Track.prototype.addNote = function(note) {
  * Remove the given note
  * @param {note} note The note to remove
  */
-Track.prototype.removeNote = function(note) {  
+Track.prototype.removeNote = function(frequency, beat, duration, volume) {  
     //binary search tree seems kind of overkill for now
     for (var i = 0; i < this.notes.length; i++) {
-        if (this.notes[i] == note) {
+        if (this.notes[i].frequency == frequency && this.notes[i].duration == duration && this.notes[i].beat == beat) {
             this.notes.splice(i, 1);
             return;
         }
@@ -65,7 +65,8 @@ Track.prototype.play = function(beat) {
     }    
 }
 
-Track.prototype.playNote = function(note) {
+Track.prototype.playNote = function(frequency, beat, duration, volume) {
+    var note = new Note(frequency, beat, duration, volume);
     var noteToPlay = new this.instrument(this.audiolet, note.frequency, note.duration, note.volume);
     noteToPlay.connect(this.audiolet.output);
 }
