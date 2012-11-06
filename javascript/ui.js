@@ -1,3 +1,4 @@
+/*
 var Piano = function(track) {
     this.track = track;
     this.whiteCanvas = document.getElementById('white-keys');
@@ -23,8 +24,8 @@ var Piano = function(track) {
     this.piano.onmousedown = (function(e) {
         //var x = e.pageX - piano.offsetLeft;
         //var y = e.pageY - piano.offsetTop + this.sequencer.scrollTop;
-        var x = e.pageX;
-        var y = e.pageY;
+        var x = e.pageX - piano.offsetLeft;
+        var y = e.pageY - piano.offsetTop;
         var drawY = this.getNoteOffset(x, y); 
         var octaveGroup = Math.floor(drawY / this.octaveHeight); //each group of notes consisting of an octave, starting from top: C8 - D7 is 0, C7 - C6 is 1, etc
         for (var i = 0; i < this.clickTable.length; i++) {
@@ -42,8 +43,8 @@ var Piano = function(track) {
         //console.log(this.sequencer.scrollTop);
         //var x = e.pageX - piano.offsetLeft;
         //var y = e.pageY - piano.offsetTop + this.sequencer.scrollTop; 
-        var x = e.pageX;
-        var y = e.pageY;
+        var x = e.pageX - piano.offsetLeft;
+        var y = e.pageY - piano.offsetTop;
         var drawY = this.getNoteOffset(x, y);       
         //console.log(drawY);
         if (drawY != this.pastKey){
@@ -153,3 +154,196 @@ Piano.prototype.getNoteNumber = (function(x, y) {
     }
     return octaveGroup * 210 + noteRectangle * 30;
 });
+ */
+
+var Piano = function(sharpHeight, adgHeight, bcefHeight) {
+    this.whiteWidth = 150;
+    this.whiteCanvas = document.getElementById('white-keys');
+    this.blackCanvas = document.getElementById('black-keys');
+    this.whiteContext = this.whiteCanvas.getContext("2d");
+    this.blackContext = this.blackCanvas.getContext("2d");
+    this.keys = [];
+    this.sharpHeight = sharpHeight;
+    this.adgHeight = adgHeight;
+    this.bcefHeight = bcefHeight;
+    this.blackOffset = sharpHeight / 2;
+    this.octaveHeight = 3 * this.adgHeight + 4 * this.bcefHeight; //The height of an entire octave is 7 x the height of a white key
+    this.piano = document.getElementById('piano');
+    this.piano.onmousedown = (function(e) {
+        this.keys[1].draw(this.whiteContext, '#B0B', '#FAG');
+    }).bind(this);
+}
+
+Piano.prototype.drawPiano = function(startKey, numKeys) {
+    var notes = ['g#', 'g', 'f#', 'f', 'e', 'd#', 'd' ,'c#', 'c', 'b', 'a#', 'a'];
+    var notesOffset = [
+                       this.blackOffset,
+                       this.adgHeight - this.blackOffset,
+                       this.blackOffset,
+                       this.bcefHeight,
+                       this.bcefHeight - this.blackOffset,
+                       this.blackOffset,
+                       this.adgHeight - this.blackOffset,
+                       this.blackOffset,
+                       this.bcefHeight,
+                       this.bcefHeight - this.blackOffset,
+                       this.blackOffset,
+                       this.adgHeight - this.blackOffset
+                       ];
+    var startindex = notes.indexOf(startKey);
+    var nextY = 0;
+    for(var i=0, j = startindex; i < numKeys; i++, j = (j + 1) % 12) {
+       // console.log(notes[j]);
+        if(notes[j][1] == '#') {
+            this.keys[i] = new PianoKey(nextY, this.sharpHeight, notes[j]);
+            this.keys[i].draw(this.blackContext);
+        }
+        else if(notes[j] == 'a' || notes[j] == 'd' || notes[j] == 'g') {
+            this.keys[i] = new PianoKey(nextY, this.adgHeight, notes[j]);
+            this.keys[i].draw(this.whiteContext);
+        }
+        else {
+            this.keys[i] = new PianoKey(nextY, this.bcefHeight, notes[j]);
+            this.keys[i].draw(this.whiteContext);
+        }
+        nextY += notesOffset[j];
+    }
+
+}
+
+Piano.prototype.getHeight = function() {
+    return this.keys[this.keys.length - 1].y + this.keys[this.keys.length - 1].height;
+}
+
+Piano.prototype.getKey = function(x, y) {
+    var keyIndex = this.searchKeys(y);
+    if (x > this.whiteWidth / 2) { //white keys only
+        if (this.notes[keyIndex].black) {
+            if(this.isInside(y, this.notes[keyIndex - 1])) {
+                return this.notes[keyIndex - 1];
+            }
+            else {
+                return this.notes[keyIndex + 1];
+            }
+        }
+        else {
+            return this.notes[keyIndex];
+        }
+    }
+    else {
+        if (this.notes[keyIndex].black) { //could be a black key
+            
+        }
+        else {
+            
+        }
+    } 
+    //return this.searchKeys(90);
+
+}
+
+Piano.prototype.searchKeys = function(y) {
+    var low = 0, high = this.keys.length - 1,
+        i;
+    while(low <= high) {
+       // console.log('foo');
+        i = Math.floor((low + high) / 2);
+        //if (y >= this.keys[i].y && y <= this.keys[i].y + this.keys[i].height) {
+         if (this.isInside(y, this.keys[i])) {
+            //return this.keys[i];
+            return i;
+        }
+        if (this.keys[i].y < y) {
+            low = i + 1;
+            continue;
+        }
+        if (this.keys[i].y > y) {
+            high = i - 1;
+            continue;
+        }
+        //return this.keys[i];
+    }
+    return null;
+}
+
+Piano.prototype.isInside = function(y, key) {
+    return y >= key.y && y <= key.y + key.height;
+}
+
+/*Piano.prototype.drawWhiteKey = function(y, color, strokeColor) {
+    this.whiteContext.fillStyle = color ||'#FFF'; 
+    this.whiteContext.strokeStyle = strokeColor || '#000'; 
+    this.whiteContext.lineWidth = 0;
+    this.whiteContext.fillRect(0, y, this.whiteWidth, this.whiteHeight);
+    this.whiteContext.strokeRect(0, y, this.whiteWidth, this.whiteHeight);
+}
+
+Piano.prototype.drawBlackKey = function(y, color, strokeColor) {
+    this.blackContext.fillStyle = color || '#000'; 
+    this.blackContext.strokeStyle =strokeColor || '#000'; 
+    this.blackContext.lineWidth = 0;
+    this.blackContext.fillRect(0, y, this.blackWidth, this.blackHeight);
+    this.blackContext.strokeRect(0, y, this.blackWidth, this.blackHeight);   
+} */
+
+var PianoKey = function (y, height, note) {
+    this.y = y;
+    this.height = height;
+    this.note = note;
+    if (this.note[1] == '#') {
+        this.black = true;
+        this.width = 75;
+        this.fillStyle = '#000'; 
+    }
+    else {
+        this.black = false;
+        this.width = 150;
+        this.fillStyle = '#FFF'; 
+    }
+}
+
+PianoKey.prototype.draw = function(context, fillStyle, strokeStyle) {
+    //if(this.note != 'f') return;
+    //console.log(this.keys);
+    context.fillStyle = fillStyle || this.fillStyle; 
+    context.strokeStyle = strokeStyle || '#000';
+    context.lineWidth = 0;
+    context.fillRect(0, this.y, this.width, this.height);
+    context.strokeRect(0, this.y, this.width, this.height);
+}
+
+var Grid = function(canvas) {
+    this.context = canvas.getContext("2d");
+    this.width = canvas.width;
+    this.height = canvas.height;
+    
+}
+
+Grid.prototype.drawGrid = function(numKeys, keyHeight, start, startNote) {
+    var cellWidth = this.width / 16;
+    var notes = ['g#', 'g', 'f#', 'f', 'e', 'd#', 'd' ,'c#', 'c', 'b', 'a#', 'a'];
+    var startNotetoDraw = notes.indexOf(startNote);
+    this.context.lineWidth = 0; 
+    for(var i = start, j = startNotetoDraw; i < this.height; i = i + keyHeight, j = (j + 1) % 12) {
+        if (notes[j][1] == '#' ) {
+            this.context.fillStyle = '#cae3eb';   
+        }
+        else {
+            //this.context.fillStyle = '#FFF';   
+            //this.context.fillStyle = '#c3e1eb'; 
+            this.context.fillStyle = '#ddf4fc';
+        }
+        console.log(i);
+        this.context.fillRect(0, i, this.width, keyHeight);
+        this.context.strokeRect(0, i, this.width, keyHeight);
+    }
+    this.context.lineWidth = 1; 
+    for (var i = 0; i < this.width; i = i + cellWidth) {
+        this.context.moveTo(i, 0);
+        this.context.lineTo(i, this.height);
+        //this.context.lineTo(graph.width(), graph.height() - yPadding);
+        this.context.stroke();
+    }
+
+
+}

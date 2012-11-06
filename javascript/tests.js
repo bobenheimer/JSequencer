@@ -67,3 +67,14 @@ for (var i = 0; i < notes.length; i++) {
 //track1.changeTempo(140);
 song.changeTempo(300);
 //song.play();
+
+
+
+function test1() {
+    var gridElement = document.getElementById('canvas-grid');
+    var grid = new Grid(gridElement);
+    grid.drawGrid(gridElement, 20, 10, 'c');
+}
+
+
+

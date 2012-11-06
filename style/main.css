@@ -1,24 +1,33 @@
 @CHARSET "ISO-8859-1";
 
-body {
+* {
 
+}
+body {
 
 }
 
 
 #main {
     margin-bottom: 150px;
-    height: 2080px;
 }
 
 #piano {
+    width: 150px;
+    height: 1780px;
     position: relative;
-    width: 100%;
+    display: inline-block;
 }
 
-#sequencer {
-    height: 700px;
-    overflow: scroll;
+#grid {
+   /* border: 1px solid black;*/
+    /*background-color: #c3e1eb; */
+    display:  inline-block;
+    height: 1780px;
+}
+
+#canvas-grid {
+    
 }
 
 #white-keys {
@@ -37,15 +46,22 @@ body {
 
 }
 
+
+#sequencer {
+
+}
+
+
+
 footer {
     position: fixed;
     height: 150px;
     width: 100%;
     bottom: 0;
-    background-color: #B4CDCD;
- z-index: 2;
-}
+    background-color: #335086;
+    z-index: 2;
+}   
 
-.poo {
-        text-align: center;
+div {
+
 }

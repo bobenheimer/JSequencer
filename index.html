@@ -4,8 +4,8 @@
         <script src="javascript/Audiolet.js"></script>
         <script src="javascript/instruments.js"></script>
         <script src="javascript/JSequencer.js"></script>
-        <script src="javascript/tests.js"></script>
         <script src="javascript/ui.js"></script>
+        <script src="javascript/tests.js"></script>
         <script type="application/javascript">
         function draw() {
             var song = new Song();
@@ -15,7 +15,11 @@
             //console.log(scale.getFrequency(9, 4186.01, -8));
             
             var track = song.tracks[0];
-            var pianoUI = new Piano(track);
+            var pianoUI = new Piano(20, 40, 30);
+            pianoUI.drawPiano('c', 88);
+            console.log(pianoUI.getHeight());
+            //console.log(pianoUI.getKey());
+            test1();
         }
         /*var past = null;
         
@@ -168,16 +172,21 @@
         <link type="text/css" rel="stylesheet" href="style/main.css">
     </head>
     <body onload="draw()">
-    <div id="container">
-        <div id="main">
-           <!-- <div id="sequencer">-->
-                <div id="piano">
-                    <canvas id="white-keys"  width="200" height="2080"></canvas>                
-                    <canvas id="black-keys"  width="200" height="2080"></canvas>            
-                </div>
-            <!--</div>-->
-        </div>
-    </div>
+   <!--  <div id="container"> -->
+
+    <div id="main">
+         <div id="sequencer"> 
+             <div id="piano">
+                <canvas id="white-keys"  width="150" height="1780"></canvas>                
+                <canvas id="black-keys"  width="150" height="1780"></canvas>   
+            </div>
+            <div id = "grid">
+                <canvas id="canvas-grid" width="800" height="1780"></canvas>
+            </div>
+         </div>
+     </div>
+        
+
     <footer>
     <p class="poo">BUTTONS UP THE BUTT LMAO</p>
     </footer>
