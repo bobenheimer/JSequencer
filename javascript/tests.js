@@ -1,5 +1,5 @@
 
-
+function test2() {
 
 
 var notes = [];
@@ -66,21 +66,27 @@ for (var i = 0; i < notes.length; i++) {
 
 //track1.changeTempo(140);
 song.changeTempo(300);
-//song.play();
+song.play();
 
-
+}
 
 function test1() {
     var song = new Song();
-    song.createTrack(Synth1);
-    var a = [0, 30, 50, 60, 80, 90, 110, 120, 150, 170, 180, 200];
+    song.createTrack(Synth2);
+    //var a = [0, 30, 50, 60, 80, 90, 110, 120, 150, 170, 180, 200];
     //var scale = new Scale([0,1,2,3,4,5,6,7,8,9,10,11]);
     //console.log(scale.getFrequency(9, 4186.01, -8));
 
 
     var track = song.tracks[0];
     var pianoUI = new Piano(20, 40, 30, track);
-    pianoUI.drawPiano('c', 8, 48);
+    
+
+    
+
+
+    
+    pianoUI.drawPiano('c', 8, 60);
     console.log(pianoUI.getHeight());
     
     var test = {};
@@ -90,23 +96,26 @@ function test1() {
     /*for (var i = 0; i < 100; i++) {
         test[Math.floor(Math.random() * 1500) + 1] = Math.floor(Math.random() * 100) + 1;
         testArray[Math.floor(Math.random() * 1500) + 1] = Math.floor(Math.random() * 100) + 1;
-    } */
+    } 
     
-    for (var i = 0; i < 240; i++) {
+  for (var i = 0; i < 240; i++) {
         testArray[i] = Math.floor(Math.random() * 100) + 1;
-    }
-
+    }*/
+ 
     var gridElement = document.getElementById('canvas-grid');
     
-    var grid = new Grid(gridElement);
+    var grid = new Grid(gridElement, pianoUI);
+    var controls = new Controls(song, pianoUI, grid);
+    controls.addListeners();
+    
     console.time('foo');
     
-    grid.drawGrid(pianoUI);
+    grid.drawGrid(100, .5);
     for (var i = 0; i < 100000; i++) {
         test[Math.floor(Math.random() * 100) + 1];
     } 
 
-    console.timeEnd('foo');
+    console.timeEnd('foo'); 
 }
 
 

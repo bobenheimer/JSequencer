@@ -61,13 +61,16 @@ Track.prototype.play = function(beat) {
     }
     //console.log(offset);
     for (var i = startNote; i < this.notes.length; i++) {
-        this.audiolet.scheduler.addRelative(this.notes[i].beat - beat, this.playNote.bind(this, this.notes[i]));
+        this.audiolet.scheduler.addRelative(this.notes[i].beat - beat, this.playNote.bind(this, this.notes[i].frequency, this.notes[i].beat, this.notes[i].duration, this.notes[i].volume));
     }    
 }
 
 Track.prototype.playNote = function(frequency, beat, duration, volume) {
+    //console.log(beat);
     var note = new Note(frequency, beat, duration, volume);
+    //var noteToPlay = new Sine(this.audiolet, frequency);
     var noteToPlay = new this.instrument(this.audiolet, note.frequency, note.duration, note.volume);
+    //console.log(noteToPlay);
     noteToPlay.connect(this.audiolet.output);
 }
 

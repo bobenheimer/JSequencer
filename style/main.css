@@ -51,7 +51,13 @@ body {
 
 }
 
+#tempo {
+    width: 25px;
+}
 
+#note-lengths button {
+    
+}
 
 footer {
     position: fixed;
