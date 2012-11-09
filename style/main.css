@@ -1,33 +1,36 @@
-@CHARSET "ISO-8859-1";
-
 * {
 
 }
-body {
 
+html, body  {
+    height: 98%;
 }
-
 
 #main {
-    margin-bottom: 150px;
+    background: orange;
+    height: 75%;
+    overflow-y: hidden;
+    
 }
 
-#piano {
-    width: 150px;
-    height: 1780px;
-    position: relative;
-    display: inline-block;
-}
+footer {
+    height: 25%;
+    width: 100%;
+    background-color: #335086;
+}   
 
-#grid {
-   /* border: 1px solid black;*/
-    /*background-color: #c3e1eb; */
-    display:  inline-block;
-    height: 1780px;
+#canvas-notes {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
 }
 
 #canvas-grid {
-    
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 0;
 }
 
 #white-keys {
@@ -43,31 +46,54 @@ body {
     left: 0;
     top: 0;
     z-index: 1;
-
 }
 
+#piano {
+    position: relative;
+    float: left;/* Make this div as wide as its contents */
+    background: #eda;
+    width: 150px;
+    height: 1780px;
+}
+
+#grid {
+    position: relative;
+    height: 1780px;
+    width: 2000px;
+}
+
+#grid-container {
+    background: #b0b;
+    overflow: hidden;
+}
 
 #sequencer {
-
+    background: #ddd;
+    overflow: hidden;/* Makes #outer contain its floated children */
+    width: 2160px;
 }
 
-#tempo {
-    width: 25px;
+#sequencer-container {
+    background: orange;
+    height: 100%;
+    overflow: scroll;
 }
 
-#note-lengths button {
-    
+.a {
+    background: orange;
+    overflow: hidden;
 }
 
-footer {
-    position: fixed;
-    height: 150px;
-    width: 100%;
-    bottom: 0;
-    background-color: #335086;
-    z-index: 2;
-}   
+.b {
+        overflow: hidden;
+    background: pink;
+    height: 100px;
+    width: 150px;
+}
 
-div {
-
+.c {
+        overflow: hidden;
+    background: red;
+    height: 100px;
+    width: 2000px;
 }

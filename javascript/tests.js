@@ -103,14 +103,14 @@ function test1() {
     }*/
  
     var gridElement = document.getElementById('canvas-grid');
-    
-    var grid = new Grid(gridElement, pianoUI);
+    var noteElement = document.getElementById('canvas-notes');
+    var grid = new Grid(gridElement, noteElement, pianoUI);
     var controls = new Controls(song, pianoUI, grid);
     controls.addListeners();
     
     console.time('foo');
     
-    grid.drawGrid(100, .5);
+    grid.drawGrid(100, 0.5);
     for (var i = 0; i < 100000; i++) {
         test[Math.floor(Math.random() * 100) + 1];
     } 
