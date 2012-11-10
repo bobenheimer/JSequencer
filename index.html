@@ -18,37 +18,38 @@
     <body onload="draw()">
    <!--  <div id="container"> -->
 
+   <div id="menu">
+        <p class="poo">BUTTONS UP THE BUTT LMAO</p>
+        <button id="play-button">PLAY</button>
+        <input type="text" id="tempo">
+        <div id="note-lengths">    
+            <button id="whole"><img src="images/whole-note.jpg" /></button>
+            <button id="half"><img src="images/half-note.jpg" /></button>
+            <button id="quarter"><img src="images/quarter-note.jpg" /></button>
+            <button id="eight"><img src="images/eigth-note.jpg" /></button>
+            <button id="sixteenth"><img src="images/sixteenth-note.jpg" /></button>
+        </div>
+    </div> 
+
     <div id="main">
-        <div id="sequencer-container">
-            <div id="sequencer"> 
-                <div id="piano">
-                    <canvas id="white-keys"  width="150" height="1780"></canvas>                
-                    <canvas id="black-keys"  width="150" height="1780"></canvas>
-                </div>
-                <div id="grid-container">
-                    <div id = "grid">
-                        <canvas id="canvas-grid" width="2000" height="1780"></canvas>
-                        <canvas id="canvas-notes" width="2000" height="1780"></canvas>
-                    </div>
-                </div>
-             </div>
-         </div>
-     </div>
-        
-
-    <footer>
-    <p class="poo">BUTTONS UP THE BUTT LMAO</p>
-    <button id="play-button">PLAY</button>
-    <input type="text" id="tempo">
-    <div id="note-lengths">    
-        <button id="whole">whole</button>
-        <button id="half">half</button>
-        <button id="quarter">quarter</button>
-        <button id="eight">eight</button>
-        <button id="sixteenth">sixteenth</button>
+        <div id="piano-container">
+            <div id="piano">
+                 <canvas id="white-keys"  width="150"></canvas>                
+                 <canvas id="black-keys"  width="150"></canvas>
+            </div>
+        </div>
+        <div id="grid-container">
+            <div id="grid">
+                <canvas id="canvas-notes" width="2000"></canvas>
+                <canvas id="canvas-grid" width="2000"></canvas>
+            </div>
+        </div>    
     </div>
-
-    </footer>
     </body>
+    <script type="application/javascript">
+        document.getElementById("grid-container").onscroll = function() {
+            document.getElementById("piano-container").scrollTop = this.scrollTop;
+        };
+   </script>
 </html>
    

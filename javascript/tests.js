@@ -110,7 +110,7 @@ function test1() {
     
     console.time('foo');
     
-    grid.drawGrid(100, 0.5);
+    grid.drawGrid(100, 1);
     for (var i = 0; i < 100000; i++) {
         test[Math.floor(Math.random() * 100) + 1];
     } 
