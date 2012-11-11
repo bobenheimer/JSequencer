@@ -20,7 +20,6 @@ var Piano = function(sharpHeight, adgHeight, bcefHeight, track) {
     this.whiteKeyLookup = [];
     this.pastKey = null;
     this.piano.onmousedown = (function(e) {
-        //console.log(this.container.scrollTop);
         var x = e.pageX - this.piano.offsetLeft;
         var y = e.pageY - this.piano.offsetTop + this.container.scrollTop;
         var key = this.getKey(x, y);
@@ -28,6 +27,7 @@ var Piano = function(sharpHeight, adgHeight, bcefHeight, track) {
     }).bind(this);
     
     this.piano.onmousemove = (function(e) {
+        console.log(this.piano.offsetTop);
         var x = e.pageX - this.piano.offsetLeft;
         var y = e.pageY - this.piano.offsetTop  + this.container.scrollTop;
         //console.time('poo');
@@ -42,6 +42,10 @@ var Piano = function(sharpHeight, adgHeight, bcefHeight, track) {
         }
 
         //console.timeEnd('poo');
+    }).bind(this);
+    
+    this.piano.onmouseout = (function() {
+        this.drawNote(this.pastKey, false);
     }).bind(this);
 }
 
@@ -234,17 +238,13 @@ var Grid = function(canvas, noteCanvas, piano) {
     }).bind(this);
     
     this.grid.onmousedown = (function(e) {
-        //console.log(this.container.scrollLeft);
         var x = e.pageX - this.grid.offsetLeft + this.container.scrollLeft;
         var y = e.pageY - this.grid.offsetTop + this.container.scrollTop;;
-        //var keyIndex= this.getKeyIndex(x, y);
-        //var beat = 
         this.processClick(x, y);
-        //this.drawKey(x, keyIndex);
-        
-        //draw note
-        //add note to structure
-        //play
+    }).bind(this);
+    
+    this.grid.onmouseout = (function() {
+        this.piano.drawNote(this.pastKey, false);
     }).bind(this);
     
 }
@@ -293,9 +293,24 @@ Grid.prototype.drawGrid = function(cellWidth, cellBeatLength) {
         }
     }
     
-    //fug :DDD
+    var numCells = this.width / this.cellWidth;
+    var cellsInMeasure = this.beatsPerMeter / this.cellBeatLength;
+    //console.log(cellsInMeasure);
+    for(var i = 0; i < numCells; i++) {
+        if(i % cellsInMeasure == 0) {
+            this.context.strokeStyle = '#000';
+        }
+        else {
+            this.context.strokeStyle = '#6E6E6E';   
+        }
+        this.context.beginPath();
+        this.context.moveTo(i * this.cellWidth, 0);
+        this.context.lineTo(i * this.cellWidth, this.height);
+        this.context.stroke();
+
+    }
     
-    for (var i = 0; i < this.width; i = i + this.cellWidth) {
+    /*for (var i = 0; i < this.width; i = i + this.cellWidth) {
         if (i % this.beatsPerMeter == 0) {
             this.context.strokeStyle = '#ff0000';
         }
@@ -305,7 +320,7 @@ Grid.prototype.drawGrid = function(cellWidth, cellBeatLength) {
         this.context.moveTo(i, 0);
         this.context.lineTo(i, this.height);
         this.context.stroke();
-    }
+    }*/
     
     //REDOE THE NOTEXGRIDTHING
     
@@ -445,21 +460,44 @@ Controls.prototype.addListeners = function() {
         //console.log(self.song);
         self.song.play(0);
     }, false);
-    this.tempoButton.oninput = function() {
+    
+    this.tempoButton.onblur = (function() {
+        if (this.tempoButton.valueAsNumber < 30) {
+            this.tempoButton.value = this.song.tempo;
+        }
+        else {
+            this.song.changeTempo(this.tempoButton.valueAsNumber);
+        }
+
+    }.bind(this));
+
+    /*this.tempoButton.oninput = function() {
         self.song.changeTempo(parseInt(self.tempoButton.value, 10));
         //console.log(self.song.tempo);
-    }
+    }*/
     
     for (var i = 0; i < this.noteLengthsElements.length; i++) {
-        this.noteLengthsElements[i].addEventListener('click', this.addNoteLength.bind(this, this.noteLengths[i]), false);
+        this.noteLengthsElements[i].addEventListener('click', this.addNoteLength.bind(this, this.noteLengths[i], this.noteLengthsElements[i]), false);
     }
+    
+    
 } 
 
-Controls.prototype.addNoteLength = function(length) {
-    //console.log(length);
+Controls.prototype.addNoteLength = function(length, element) {
     this.grid.currentNoteDuration = length;
+    for (var i = 0; i < this.noteLengthsElements.length; i++) {
+        this.noteLengthsElements[i].style.border = "outset";
+    }
+    element.style.border = "inset";
 }
 
-
-
+var initialize = function() {
+    //var mainHeight = window.innerHeight document.getElementById();
+    var menuHeight = document.getElementById('menu').clientHeight;
+    //var measureCounterHeight = document.getElementById('measure-counter').clientHeight;
+    //var height = window.innerHeight - menuHeight - measureCounterHeight - 10;
+    var height = window.innerHeight - menuHeight - 10;
+    console.log(height);
+    document.getElementById('main').style.height = height + "px";
+}
 

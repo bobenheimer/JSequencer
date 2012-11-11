@@ -123,6 +123,7 @@ Song.prototype.createTrack = function(instrument) {
  * @param newTempo New tempo
  */
 Song.prototype.changeTempo  = function(newTempo) {
+    this.tempo = newTempo;
     this.audiolet.scheduler.setTempo(newTempo);
 }
 

@@ -1,23 +1,52 @@
+* {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
 
 html, body  {
-   height: 98%;
+   height: 100%;
 }
 
 
 #menu {
-    height: 15%;
+   /* height: 100px; */
     width:100%;
     background-color: #335086;
+    /*float: left;*/
 }
 
-#menu div {
+#menu>div {
+    margin: 5px;
     display: inline-block;
+}
+img {
+    vertical-align: middle;
+}
+
+#measure-counter {
+    position: relative;
+    width: 100%;
+    height: 25px;   
+}
+
+#song-controls {
+    background-color: #FFF;
+}
+
+#note-lengths div {
+    display: inline-block;
+    height: 45px;
+    width: 40px;
+    background: #FFF;
+    border: outset;
 }
 
 #main {
     height: 85%;
+    /*float: left;*/
+    width: 100%;
     overflow-y: hidden;
-    margin-top:10px;
+   /* position: absolute; */
 }
 
 #piano-container {
@@ -73,7 +102,6 @@ html, body  {
     z-index: 1;
 }
 
-
 #a {
     background: orange;
     overflow: hidden;
@@ -101,7 +129,9 @@ html, body  {
     width: 1000px;
 }
 
-#d {
-    width: 100%;
-    height: 2080px;
+#content
+{
+    height: 100%;
+    overflow: auto;
+    background: blue;
 }

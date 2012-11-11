@@ -17,20 +17,41 @@
     </head>
     <body onload="draw()">
    <!--  <div id="container"> -->
-
-   <div id="menu">
-        <p class="poo">BUTTONS UP THE BUTT LMAO</p>
-        <button id="play-button">PLAY</button>
-        <input type="text" id="tempo">
+    <!-- <div id="content"> -->
+   <!-- <div id="menu">
         <div id="note-lengths">    
-            <button id="whole"><img src="images/whole-note.jpg" /></button>
-            <button id="half"><img src="images/half-note.jpg" /></button>
-            <button id="quarter"><img src="images/quarter-note.jpg" /></button>
-            <button id="eight"><img src="images/eigth-note.jpg" /></button>
-            <button id="sixteenth"><img src="images/sixteenth-note.jpg" /></button>
+            <div id="whole"><img src="images/whole-note.jpg" /></div>
+            <div id="half"><img src="images/half-note.jpg" /></div>
+            <div id="quarter"><img src="images/quarter-note.jpg" /></div>
+            <div id="eight" style="border: inset"><img src="images/eigth-note.jpg" /></div>
+            <div id="sixteenth"><img src="images/sixteenth-note.jpg" /></div>
+        </div>
+        <div id="song-controls">
+            <span>Tempo: </span><input id = "tempo" type="number" min="30" max="400" step="1" value="100">
+            <button id="play-button"><img src="images/play.png" alt="play" /></button>
         </div>
     </div> 
+    <div id="measure-counter">
+    
+    </div> -->
+    <div id="menu">
+        <div id="note-lengths">    
+            <div id="whole"><img src="images/whole-note.jpg" /></div>
+            <div id="half"><img src="images/half-note.jpg" /></div>
+            <div id="quarter"><img src="images/quarter-note.jpg" /></div>
+            <div id="eight" style="border: inset"><img src="images/eigth-note.jpg" /></div>
+            <div id="sixteenth"><img src="images/sixteenth-note.jpg" /></div>
+        </div>
+        <div id="song-controls">
+            <span>Tempo: </span><input id = "tempo" type="number" min="30" max="400" step="1" value="100">
+            <button id="play-button"><img src="images/play.png" alt="play" /></button>
+        </div>
+    </div> 
+    
+    <!-- <div id="measure-counter">
 
+    </div> -->
+        
     <div id="main">
         <div id="piano-container">
             <div id="piano">
@@ -45,6 +66,7 @@
             </div>
         </div>    
     </div>
+    
     </body>
     <script type="application/javascript">
         document.getElementById("grid-container").onscroll = function() {
