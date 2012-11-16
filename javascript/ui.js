@@ -1,3 +1,7 @@
+
+/**
+ * Piano Part of the Piano roll
+ */
 var Piano = function(sharpHeight, adgHeight, bcefHeight, track) {
     this.track = track;
     this.blackfillStyle = "#aae3ab";
@@ -27,21 +31,16 @@ var Piano = function(sharpHeight, adgHeight, bcefHeight, track) {
     }).bind(this);
     
     this.piano.onmousemove = (function(e) {
-        console.log(this.piano.offsetTop);
         var x = e.pageX - this.piano.offsetLeft;
         var y = e.pageY - this.piano.offsetTop  + this.container.scrollTop;
-        //console.time('poo');
         var key = this.getKey(x, y);
-        //console.log(key);
         if (key != this.pastKey) {
             this.drawNote(key, true)
             if (this.pastKey != null) {
-                this.drawNote(this.pastKey, false)             
+                this.drawNote(this.pastKey, false);         
             }          
             this.pastKey = key;
         }
-
-        //console.timeEnd('poo');
     }).bind(this);
     
     this.piano.onmouseout = (function() {
@@ -50,6 +49,9 @@ var Piano = function(sharpHeight, adgHeight, bcefHeight, track) {
 }
 
 Piano.prototype.drawNote = function(key, highlight) {
+    if (key == undefined) {
+        return;
+    }
     if (highlight) {
         if (key.black) {
             key.draw(this.blackContext, this.blackfillStyle, this.strokeStyle);
@@ -151,6 +153,9 @@ Piano.prototype.getHeight = function() {
 
 
 Piano.prototype.playNote = function(key) {
+    if (key == undefined || key == null) {
+        return;
+    }
     this.track.playNote(key.frequency, 0, 1, 1);
 }
 
@@ -202,11 +207,13 @@ PianoKey.prototype.draw = function(context, fillStyle, strokeStyle) {
     context.fillText(this.note.toUpperCase() + this.octave, this.width - 25, this.y + (this.height / 2));    
 }
 
-var Grid = function(canvas, noteCanvas, piano) {
+var Grid = function(piano) {
     this.piano = piano;
     this.keyHeight = this.piano.blackOffset * 2;
     this.keys = piano.keys;
     this.beatsPerMeter = 4;
+    var canvas = document.getElementById('canvas-grid');
+    var noteCanvas = document.getElementById('canvas-notes');
     canvas.height = piano.height;
     noteCanvas.height = piano.height;
     this.context = canvas.getContext("2d");
@@ -216,11 +223,14 @@ var Grid = function(canvas, noteCanvas, piano) {
     this.container = document.getElementById('grid-container');
     this.width = canvas.width;
     this.height = canvas.height;
+    this.drawnNotes = [];
     //this.gridToNoteMap = {};
-    this.currentNoteDuration = 0.5;
+    this.currentNoteDuration = 1;
     this.smallestBeatIncrement = 0.25;
     this.startY = 0;
     this.pastKey;
+    this.measureCounter = document.getElementById("measure-counter-canvas");
+    this.measureCounterContext = this.measureCounter.getContext("2d");
     this.grid.onmousemove = (function(e) {
         var x = e.pageX - this.grid.offsetLeft + this.container.scrollLeft;
         var y = e.pageY - this.grid.offsetTop + this.container.scrollTop;
@@ -307,6 +317,9 @@ Grid.prototype.drawGrid = function(cellWidth, cellBeatLength) {
         this.context.moveTo(i * this.cellWidth, 0);
         this.context.lineTo(i * this.cellWidth, this.height);
         this.context.stroke();
+        
+        this.context.fillStyle = '#000'; 
+        this.measureCounterContext.fillText(i + 1, i * this.cellWidth + this.cellWidth / 2, 12);    
 
     }
     
@@ -329,6 +342,7 @@ Grid.prototype.drawGrid = function(cellWidth, cellBeatLength) {
     }
     //console.log(this.noteXLookup);
 }
+
 
 Grid.prototype.getKeyIndex = function(x, y) {
     var keyIndex = Math.floor((y - this.startY)/ this.keyHeight);
@@ -366,48 +380,96 @@ Grid.prototype.processClick = function(x, y) {
     //* this.cellWidth * this.smallestBeatIncrement;
     var xPosition = cellLocation + cellLocationOffset;
     var keyIndex = Math.floor((y - this.startY)/ this.keyHeight);
+    if (keyIndex < 0) {
+        return;
+    }
     var yPosition = this.startY + keyIndex * this.keyHeight;
     
     
     var beatNumber = xPosition * this.cellBeatLength / this.cellWidth;
-    //console.log(beatNumber);
-    if (1) {
-        var noteToDraw = new DrawnNote(xPosition, yPosition, notePixelLength);
+    var noteToDraw = new DrawnNote(xPosition, yPosition, notePixelLength, true);
+    //this.drawNote(xPosition, yPosition, notePixelLength, this.keyHeight);
+    var currentIndex = xPosition / this.smallestPixelBeatIncrement;
+    var durationInIncrements = this.currentNoteDuration / this.smallestBeatIncrement;
+    var noteToDelete = this.checkSameNote(noteToDraw, this.noteXLookup[currentIndex]);    
+    
+    if(noteToDelete) {
+        var startIndex = noteToDelete.x / this.smallestPixelBeatIncrement;
+        var stopIndex = noteToDelete.length / this.smallestPixelBeatIncrement + startIndex;
+        for (var i = startIndex; i < stopIndex; i++) {
+            this.removeNote(noteToDelete.x, yPosition, this.noteXLookup[i]);
+        }
+        this.drawNotes();
+        /*
+        for(var i = 0; i < this.noteXLookup.length; i++) {
+            if (this.noteXLookup[i].length > 0)
+                console.log(i + " " + this.noteXLookup[i]);
+        } */
+        //console.log(this.noteXLookup);
+        this.piano.track.removeNote(this.keys[keyIndex].frequency, noteToDelete.x * this.cellBeatLength / this.cellWidth, this.currentNoteDuration, 1);
+        //for (var i = currentIndex)
+        /*this.removeNote(yPosition, this.noteXLookup[currentIndex]);
+        this.piano.track.removeNote(this.keys[keyIndex].frequency, beatNumber, this.currentNoteDuration, 1); */
+    }
+    else {
+        this.addNotes(currentIndex, durationInIncrements, noteToDraw);
+        this.drawNote(xPosition, yPosition, notePixelLength, this.keyHeight);
+        this.piano.track.playNote(this.keys[keyIndex].frequency, 0, this.currentNoteDuration, 1);       
+        this.piano.track.addNote(new Note(this.keys[keyIndex].frequency, beatNumber, this.currentNoteDuration, 1));
+    }
+
+    
+    
+    /*if (this.noteXLookup[currentIndex].length == 0) {
+        this.noteXLookup[currentIndex] = [noteToDraw];
+        for (var i = 1; i < durationInIncrements; i++) {
+            console.log(i);
+        }
+        
         //this.drawNote(xPosition, yPosition, notePixelLength, this.keyHeight);
-        var currentIndex = xPosition / this.smallestPixelBeatIncrement;
-        if (this.noteXLookup[currentIndex].length == 0) {
-            this.noteXLookup[currentIndex] = [noteToDraw];
+        //this.piano.track.playNote(this.keys[keyIndex].frequency, 0, this.currentNoteDuration, 1);       
+        //this.piano.track.addNote(new Note(this.keys[keyIndex].frequency, beatNumber, this.currentNoteDuration, 1));
+       // console.log(durationInIncrements);
+    }*/
+   /* else {
+        if (this.checkSameNote(noteToDraw, this.noteXLookup[currentIndex])) { //remove note
+            //console.log(currentIndex);
+            
+            this.removeNote(yPosition, this.noteXLookup[currentIndex]);
+            this.drawNotes();
+            this.piano.track.removeNote(this.keys[keyIndex].frequency, beatNumber, this.currentNoteDuration, 1);
+        }
+        else { //add note
+            this.noteXLookup[currentIndex][this.noteXLookup[currentIndex].length] = noteToDraw; 
             this.drawNote(xPosition, yPosition, notePixelLength, this.keyHeight);
             this.piano.track.playNote(this.keys[keyIndex].frequency, 0, this.currentNoteDuration, 1);       
             this.piano.track.addNote(new Note(this.keys[keyIndex].frequency, beatNumber, this.currentNoteDuration, 1));
         }
-        else {
-            if (!this.checkSameNote(noteToDraw, this.noteXLookup[currentIndex])) {
-                this.noteXLookup[currentIndex][this.noteXLookup[currentIndex].length] = noteToDraw; 
-                this.drawNote(xPosition, yPosition, notePixelLength, this.keyHeight);
-                this.piano.track.playNote(this.keys[keyIndex].frequency, 0, this.currentNoteDuration, 1);       
-                this.piano.track.addNote(new Note(this.keys[keyIndex].frequency, beatNumber, this.currentNoteDuration, 1));
-            }
-            else {
-                this.removeNote(yPosition, this.noteXLookup[currentIndex]);
-                this.drawNotes();
-                this.piano.track.removeNote(this.keys[keyIndex].frequency, beatNumber, this.currentNoteDuration, 1);
-            }
 
-        }
         //console.log(this.noteXLookup);
 
+    }    */
+}
+
+Grid.prototype.addNotes = function(currentIndex, durationIncrements, noteToDraw) {
+    if (durationIncrements == 0) {
+        return;
     }
-
-
-
+    else if (this.noteXLookup[currentIndex].length == 0) {
+        this.noteXLookup[currentIndex] = [noteToDraw];
+        this.addNotes(currentIndex + 1, durationIncrements - 1, noteToDraw);
+    }
+    else {
+        this.noteXLookup[currentIndex][this.noteXLookup[currentIndex].length] = noteToDraw; 
+        this.addNotes(currentIndex + 1, durationIncrements - 1, noteToDraw);
+    }
     
 }
 
-Grid.prototype.removeNote = function(y, notes) {
+Grid.prototype.removeNote = function(x, y, notes) {
     //console.log(y);
     for (var i = 0; i < notes.length; i++) {
-        if(notes[i].y == y) {
+        if(notes[i].y == y && notes[i].x == x) {
             notes.splice(i ,1);
             return;
         }
@@ -415,10 +477,9 @@ Grid.prototype.removeNote = function(y, notes) {
 }
 
 Grid.prototype.checkSameNote = function(noteToDraw, notes) {
-    //console.log(noteToDraw);
     for (var i = 0; i < notes.length; i++) {
-        if (notes[i].x == noteToDraw.x && notes[i].y == noteToDraw.y)
-            return true;
+        if (notes[i].y == noteToDraw.y)
+            return notes[i];
     }
     return false;
 }
@@ -428,7 +489,6 @@ Grid.prototype.drawNotes = function() {
     //this.noteContext.setTransform(1, 0, 0, 1, 0, 0);
     this.noteContext.clearRect(0, 0, this.width, this.height);
     //this.noteContext.restore();
-    
     for (var i = 0; i < this.noteXLookup.length; i++) {
         for(var j = 0; j < this.noteXLookup[i].length; j++) {
             this.drawNote(this.noteXLookup[i][j].x, this.noteXLookup[i][j].y, this.noteXLookup[i][j].length, this.keyHeight);
@@ -436,13 +496,16 @@ Grid.prototype.drawNotes = function() {
     }
 }
 
-var DrawnNote = function(x, y, length) {
+var DrawnNote = function(x, y, length, isStart, startIndex) {
     this.x = x;
     this.y = y;
     this.length = length;
+    this.isStart = isStart;
+    this.startIndex = startIndex;
 }
 
-var Controls = function(song, piano, grid) {
+var Controls = function(song, piano, grid, sequencer) {
+    this.sequencer = sequencer;
     this.song = song;
     this.piano = piano;
     this.grid = grid;
@@ -451,13 +514,17 @@ var Controls = function(song, piano, grid) {
     this.tempoButton.value = this.song.tempo;
     this.noteLengthsElements = document.getElementById('note-lengths').children;
     this.noteLengths = [4, 2, 1, 0.5, 0.25];
-    
+    this.tracks = [];
+    this.tracksElement = document.getElementById('tracks');
+    this.tracksElement.onchange = (function() {
+        var instrument = this.tracksElement.options[this.tracksElement.selectedIndex].value;
+        sequencer.changeTrack(instrument);
+    }).bind(this);
 }
 
 Controls.prototype.addListeners = function() {
     var self = this;
     this.playButton.addEventListener('click', function() {
-        //console.log(self.song);
         self.song.play(0);
     }, false);
     
@@ -471,16 +538,9 @@ Controls.prototype.addListeners = function() {
 
     }.bind(this));
 
-    /*this.tempoButton.oninput = function() {
-        self.song.changeTempo(parseInt(self.tempoButton.value, 10));
-        //console.log(self.song.tempo);
-    }*/
-    
     for (var i = 0; i < this.noteLengthsElements.length; i++) {
         this.noteLengthsElements[i].addEventListener('click', this.addNoteLength.bind(this, this.noteLengths[i], this.noteLengthsElements[i]), false);
-    }
-    
-    
+    }    
 } 
 
 Controls.prototype.addNoteLength = function(length, element) {
@@ -491,13 +551,51 @@ Controls.prototype.addNoteLength = function(length, element) {
     element.style.border = "inset";
 }
 
-var initialize = function() {
+Controls.prototype.addTrack = function(track) {
+    this.tracks[this.tracks.length] = track;
+    this.tracksElement.options[this.tracksElement.options.length]= new Option(track, track);
+}
+
+
+
+
+var Sequencer = function () {
+    var song = new Song();
+    this.instruments = [Synth1, Synth2, Synth3];
+    this.instrumentNames = ["piano", "harpsichord", "percussion"];
+    this.tracks = [];
+    for (var i = 0; i < 3; i++) {
+        this.tracks[i] = song.createTrack(this.instruments[i]);
+    }
+    
+    this.piano = new Piano(20, 40, 30, this.tracks[0]);
+        
+    this.piano.drawPiano('c', 7, 60);         
+    var grid = new Grid(this.piano);
+    grid.drawGrid(100, 1);
+       
+    var controls = new Controls(song, this.piano, grid, this);
+    controls.addListeners();
+    for (var i = 0; i < this.instrumentNames.length; i++) {
+        controls.addTrack(this.instrumentNames[i]);
+    }
+}
+
+Sequencer.prototype.changeTrack = function(track) {
+    this.piano.track = this.tracks[this.instrumentNames.indexOf(track)];
+    //console.log(this.tracks[this.instrumentNames.indexOf(track)].instrument);
+    //this.tracks[this.instrumentNames.indexOf(track)].instrument = this.instruments[this.instrumentNames.indexOf(track)];
+    this.tracks[0].instrument = this.instruments[this.instrumentNames.indexOf(track)];
+}
+
+var initialize = function(startNote) {
     //var mainHeight = window.innerHeight document.getElementById();
     var menuHeight = document.getElementById('menu').clientHeight;
+    var counterHeight = document.getElementById('measure-counter').clientHeight;
     //var measureCounterHeight = document.getElementById('measure-counter').clientHeight;
     //var height = window.innerHeight - menuHeight - measureCounterHeight - 10;
-    var height = window.innerHeight - menuHeight - 10;
-    console.log(height);
+    var height = window.innerHeight - menuHeight - counterHeight - 20;
     document.getElementById('main').style.height = height + "px";
+    document.getElementById('quarter').style.border = "inset";
 }
 

@@ -7,11 +7,16 @@ html, body  {
    height: 100%;
 }
 
+body {
+    background: #E5E5E5;
+}
 
+/*------------------------------------------------MENU-----------------------------------------------------*/
 #menu {
    /* height: 100px; */
     width:100%;
     background-color: #335086;
+    margin-bottom: 5px;
     /*float: left;*/
 }
 
@@ -23,36 +28,22 @@ img {
     vertical-align: middle;
 }
 
-#measure-counter {
-    position: relative;
-    width: 100%;
-    height: 25px;   
-}
 
 #song-controls {
     background-color: #FFF;
 }
 
-#note-lengths div {
-    display: inline-block;
-    height: 45px;
-    width: 40px;
-    background: #FFF;
-    border: outset;
+#tracks-container {
+    color: #E5E5E5;
 }
 
-#main {
-    height: 85%;
-    /*float: left;*/
-    width: 100%;
-    overflow-y: hidden;
-   /* position: absolute; */
-}
+/*------------------------------------------------PIANO-----------------------------------------------------*/
 
 #piano-container {
     float: left;/* Make this div as wide as its contents */
     height: 100%;
     overflow: hidden;
+
 }
 
 #piano {
@@ -61,6 +52,56 @@ img {
     padding-bottom: 50px;
 }
 
+#white-keys {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 0;
+    
+}
+
+#black-keys {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 1;
+}
+
+
+
+/*------------------------------------------------GRID-----------------------------------------------------*/
+
+#beat {
+    height: 20px;
+    width: 150px;
+    float: left;
+
+}
+#measure-counter-container {
+   overflow: hidden;
+
+}
+
+
+#measure-counter {
+    position: relative;
+    width: 2000px;
+    height: 20px;   
+    padding-right:90px;
+}
+
+#measure-counter-canvas {
+
+}
+
+
+#note-lengths div {
+    display: inline-block;
+    height: 45px;
+    width: 40px;
+    background: #FFF;
+    border: outset;
+}
 
 #grid-container {
     overflow: scroll;
@@ -87,51 +128,5 @@ img {
     z-index: 0;
 }
 
-#white-keys {
-    position: absolute;
-    left: 0;
-    top: 0;
-    z-index: 0;
-    
-}
 
-#black-keys {
-    position: absolute;
-    left: 0;
-    top: 0;
-    z-index: 1;
-}
 
-#a {
-    background: orange;
-    overflow: hidden;
-    height: 1080px;
-}
-
-#b {
-    position: relative;
-    background: pink;
-    height: 2080px;
-    width: 150px;
-}
-
-#wigger {
-    overflow: hidden;
-    height: 100%;
-    float: left;
-}
-
-#c {
-    float: left;
-    overflow: scroll;
-    background: red;
-    height: 1080px;
-    width: 1000px;
-}
-
-#content
-{
-    height: 100%;
-    overflow: auto;
-    background: blue;
-}

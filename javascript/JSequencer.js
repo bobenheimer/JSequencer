@@ -10,9 +10,7 @@ var Track = function(audiolet, instrument) {
 
 /**
  * Add a single note to the track
- * @param {Number} frequency The note's frequency
- * @param {Number} beatNumber The beat number the note starts on
- * @param {Number} noteLength The length of the note in Beats
+ * @param {Note} The note to add
  */
 Track.prototype.addNote = function(note) {
     //binary search tree seems kind of overkill for now
@@ -28,12 +26,15 @@ Track.prototype.addNote = function(note) {
 
 /**
  * Remove the given note
- * @param {note} note The note to remove
+ * @param {Number} frequency
+ * @param {Number} beat
+ * @param {Number} duration
  */
 Track.prototype.removeNote = function(frequency, beat, duration, volume) {  
     //binary search tree seems kind of overkill for now
     for (var i = 0; i < this.notes.length; i++) {
-        if (this.notes[i].frequency == frequency && this.notes[i].duration == duration && this.notes[i].beat == beat) {
+        //if (this.notes[i].frequency == frequency && this.notes[i].duration == duration && this.notes[i].beat == beat) {
+        if (this.notes[i].frequency == frequency && this.notes[i].beat == beat) {
             this.notes.splice(i, 1);
             return;
         }
@@ -59,18 +60,21 @@ Track.prototype.play = function(beat) {
         beat = 0;
         //offset = 0;
     }
-    //console.log(offset);
     for (var i = startNote; i < this.notes.length; i++) {
         this.audiolet.scheduler.addRelative(this.notes[i].beat - beat, this.playNote.bind(this, this.notes[i].frequency, this.notes[i].beat, this.notes[i].duration, this.notes[i].volume));
     }    
 }
 
+/**
+ * Play a note
+ * @param {Number} frequency
+ * @param {Number} beat
+ * @param {Number} duration
+ * @param {Number} volume
+ */
 Track.prototype.playNote = function(frequency, beat, duration, volume) {
-    //console.log(beat);
     var note = new Note(frequency, beat, duration, volume);
-    //var noteToPlay = new Sine(this.audiolet, frequency);
     var noteToPlay = new this.instrument(this.audiolet, note.frequency, note.duration, note.volume);
-    //console.log(noteToPlay);
     noteToPlay.connect(this.audiolet.output);
 }
 
@@ -114,8 +118,13 @@ var Song = function() {
 	this.tracks = [];
 }
 
+/**
+ * Create a new track for the song
+ * @param instrument
+ */
 Song.prototype.createTrack = function(instrument) {
     this.tracks[this.tracks.length] = new Track(this.audiolet, instrument);
+    return this.tracks[this.tracks.length - 1];
 }
 
 /**
@@ -127,6 +136,10 @@ Song.prototype.changeTempo  = function(newTempo) {
     this.audiolet.scheduler.setTempo(newTempo);
 }
 
+/**
+ * Play the song at the specified beat
+ * @param {Number} beat
+ */
 Song.prototype.play = function(beat) {
 	for (var i = 0; i < this.tracks.length; i++) {
 		this.tracks[i].play(beat);
