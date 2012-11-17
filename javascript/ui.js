@@ -23,29 +23,6 @@ var Piano = function(sharpHeight, adgHeight, bcefHeight, track) {
     this.blackKeyLookup = [];
     this.whiteKeyLookup = [];
     this.pastKey = null;
-    this.piano.onmousedown = (function(e) {
-        var x = e.pageX - this.piano.offsetLeft;
-        var y = e.pageY - this.piano.offsetTop + this.container.scrollTop;
-        var key = this.getKey(x, y);
-        this.playNote(key);
-    }).bind(this);
-    
-    this.piano.onmousemove = (function(e) {
-        var x = e.pageX - this.piano.offsetLeft;
-        var y = e.pageY - this.piano.offsetTop  + this.container.scrollTop;
-        var key = this.getKey(x, y);
-        if (key != this.pastKey) {
-            this.drawNote(key, true)
-            if (this.pastKey != null) {
-                this.drawNote(this.pastKey, false);         
-            }          
-            this.pastKey = key;
-        }
-    }).bind(this);
-    
-    this.piano.onmouseout = (function() {
-        this.drawNote(this.pastKey, false);
-    }).bind(this);
 }
 
 Piano.prototype.drawNote = function(key, highlight) {
@@ -96,23 +73,21 @@ Piano.prototype.drawPiano = function(startKey, startOctave, numKeys) {
         var frequency =  Math.pow(2, (Math.abs(startNote - i) - 49) / 12) * 440;
         if(notes[j][1] == '#') {
             this.keys[i] = new PianoKey(nextY, this.sharpHeight, notes[j], octave, frequency);
-            //this.keys[i].draw(this.blackContext);
         }
         else if(notes[j] == 'a' || notes[j] == 'd' || notes[j] == 'g') {
             this.height += this.adgHeight;
             this.keys[i] = new PianoKey(nextY, this.adgHeight, notes[j], octave, frequency);
-            //this.keys[i].draw(this.whiteContext);
         }
         else {
             this.height += this.bcefHeight;
             this.keys[i] = new PianoKey(nextY, this.bcefHeight, notes[j], octave, frequency);
-            //this.keys[i].draw(this.whiteContext);
         }
         if (this.keys[i].note == 'c') {
             octave -= 1;
         }
         nextY += notesOffset[j];
     }
+    
     //create lookup table for black keys
     for(var i = 0; i < 12; i++) {
         if (this.keys[i].black) {
@@ -144,6 +119,29 @@ Piano.prototype.drawPiano = function(startKey, startOctave, numKeys) {
             this.keys[i].draw(this.whiteContext);
         }
     }
+    this.piano.onmousedown = (function(e) {
+        var x = e.pageX - this.piano.offsetLeft;
+        var y = e.pageY - this.piano.offsetTop + this.container.scrollTop;
+        var key = this.getKey(x, y);
+        this.playNote(key);
+    }).bind(this);
+    
+    this.piano.onmousemove = (function(e) {
+        var x = e.pageX - this.piano.offsetLeft;
+        var y = e.pageY - this.piano.offsetTop  + this.container.scrollTop;
+        var key = this.getKey(x, y);
+        if (key != this.pastKey) {
+            this.drawNote(key, true)
+            if (this.pastKey != null) {
+                this.drawNote(this.pastKey, false);         
+            }          
+            this.pastKey = key;
+        }
+    }).bind(this);
+    
+    this.piano.onmouseout = (function() {
+        this.drawNote(this.pastKey, false);
+    }).bind(this);
 
 }
 
@@ -207,65 +205,39 @@ PianoKey.prototype.draw = function(context, fillStyle, strokeStyle) {
     context.fillText(this.note.toUpperCase() + this.octave, this.width - 25, this.y + (this.height / 2));    
 }
 
-var Grid = function(piano) {
-    this.piano = piano;
-    this.keyHeight = this.piano.blackOffset * 2;
-    this.keys = piano.keys;
+var Grid = function() {
     this.beatsPerMeter = 4;
-    var canvas = document.getElementById('canvas-grid');
-    var noteCanvas = document.getElementById('canvas-notes');
-    canvas.height = piano.height;
-    noteCanvas.height = piano.height;
-    this.context = canvas.getContext("2d");
-    this.noteContext = noteCanvas.getContext("2d");
+    this.canvas = document.getElementById('canvas-grid');
+    this.noteCanvas = document.getElementById('canvas-notes');
+    this.context = this.canvas.getContext("2d");
+    this.noteContext = this.noteCanvas.getContext("2d");
     this.grid = document.getElementById('grid');
-    this.grid.style.height = piano.height + "px";
     this.container = document.getElementById('grid-container');
-    this.width = canvas.width;
-    this.height = canvas.height;
     this.drawnNotes = [];
-    //this.gridToNoteMap = {};
     this.currentNoteDuration = 1;
     this.smallestBeatIncrement = 0.25;
     this.startY = 0;
     this.pastKey;
     this.measureCounter = document.getElementById("measure-counter-canvas");
     this.measureCounterContext = this.measureCounter.getContext("2d");
-    this.grid.onmousemove = (function(e) {
-        var x = e.pageX - this.grid.offsetLeft + this.container.scrollLeft;
-        var y = e.pageY - this.grid.offsetTop + this.container.scrollTop;
-        var key = this.keys[this.getKeyIndex(x, y)];
-        if (key == undefined) {
-            return;
-        }
-        if (key != this.pastKey) {
-            this.piano.drawNote(key, true)
-            if (this.pastKey != null) {
-                this.piano.drawNote(this.pastKey, false)             
-            }     
-            this.pastKey = key;
-        }
-    }).bind(this);
-    
-    this.grid.onmousedown = (function(e) {
-        var x = e.pageX - this.grid.offsetLeft + this.container.scrollLeft;
-        var y = e.pageY - this.grid.offsetTop + this.container.scrollTop;;
-        this.processClick(x, y);
-    }).bind(this);
-    
-    this.grid.onmouseout = (function() {
-        this.piano.drawNote(this.pastKey, false);
-    }).bind(this);
-    
+    this.noteXLookup = [];
 }
 
 
-Grid.prototype.drawGrid = function(cellWidth, cellBeatLength) {
+Grid.prototype.drawGrid = function(cellWidth, cellBeatLength, piano) {
+    this.piano = piano;
+    this.keyHeight = this.piano.blackOffset * 2;
+    this.keys = piano.keys;
+    this.canvas.height = piano.height;
+    this.noteCanvas.height = piano.height;
+    this.grid.style.height = piano.height + "px";
+    this.width = this.canvas.width;
+    this.height = this.canvas.height;
     this.cellWidth = cellWidth || this.width / 16;
     this.cellBeatLength = cellBeatLength || 1;
     this.smallestPixelBeatIncrement = this.cellWidth * this.smallestBeatIncrement / this.cellBeatLength;
-    this.noteXLookup = [];
     this.context.lineWidth = 0;
+
     if (this.keys[0].black) {
         this.startY = 0;        
     }
@@ -284,28 +256,23 @@ Grid.prototype.drawGrid = function(cellWidth, cellBeatLength) {
         if(this.keys[i].black) {
             this.context.fillRect(0, this.keys[i].y, this.width, this.keys[i].height);
             this.context.strokeRect(0, this.keys[i].y, this.width, this.keys[i].height);
-            //this.gridToNoteMap[keys[i].y] = keys[i];
         }
         else if(this.keys[i].note == 'a' || this.keys[i].note == 'd' || this.keys[i].note == 'g'){
             this.context.fillRect(0, this.keys[i].y + this.piano.blackOffset, this.width, this.keys[i].height -  this.piano.blackOffset);
             this.context.strokeRect(0, this.keys[i].y + this.piano.blackOffset, this.width, this.keys[i].height - this.piano.blackOffset);   
-            //this.gridToNoteMap[keys[i].y + this.piano.blackOffset] = keys[i];
         }
         else if(this.keys[i].note == 'c' || this.keys[i].note == 'f'){
             this.context.fillRect(0, this.keys[i].y + this.piano.blackOffset, this.width, this.keys[i].height);
             this.context.strokeRect(0, this.keys[i].y + this.piano.blackOffset, this.width, this.keys[i].height);  
-            //this.gridToNoteMap[keys[i].y + this.piano.blackOffset] = keys[i];
         }
         else {
             this.context.fillRect(0, this.keys[i].y, this.width, this.keys[i].height -  this.piano.blackOffset);
             this.context.strokeRect(0, this.keys[i].y, this.width, this.keys[i].height -  this.piano.blackOffset);  
-            //this.gridToNoteMap[keys[i].y] = keys[i];
         }
     }
     
     var numCells = this.width / this.cellWidth;
     var cellsInMeasure = this.beatsPerMeter / this.cellBeatLength;
-    //console.log(cellsInMeasure);
     for(var i = 0; i < numCells; i++) {
         if(i % cellsInMeasure == 0) {
             this.context.strokeStyle = '#000';
@@ -323,61 +290,55 @@ Grid.prototype.drawGrid = function(cellWidth, cellBeatLength) {
 
     }
     
-    /*for (var i = 0; i < this.width; i = i + this.cellWidth) {
-        if (i % this.beatsPerMeter == 0) {
-            this.context.strokeStyle = '#ff0000';
+    if (this.noteXLookup.length == 0) {
+        for (var i = 0; i < this.width / this.smallestPixelBeatIncrement; i++) {
+            this.noteXLookup[i] = [];
         }
-        else {
-            this.context.strokeStyle = '#000';
-        }
-        this.context.moveTo(i, 0);
-        this.context.lineTo(i, this.height);
-        this.context.stroke();
-    }*/
-    
-    //REDOE THE NOTEXGRIDTHING
-    
-    for (var i = 0; i < this.width / this.smallestPixelBeatIncrement; i++) {
-        this.noteXLookup[i] = [];
     }
-    //console.log(this.noteXLookup);
+
+    this.grid.onmousemove = (function(e) {
+        var x = e.pageX - this.grid.offsetLeft + this.container.scrollLeft;
+        var y = e.pageY - this.grid.offsetTop + this.container.scrollTop;
+        var key = this.keys[this.getKeyIndex(x, y)];
+        if (key == undefined) {
+            return;
+        }
+        if (key != this.pastKey) {
+            this.piano.drawNote(key, true);
+            if (this.pastKey != null) {
+                this.piano.drawNote(this.pastKey, false);             
+            }     
+            this.pastKey = key;
+        }
+    }).bind(this);
+    
+    this.grid.onmousedown = (function(e) {
+        var x = e.pageX - this.grid.offsetLeft + this.container.scrollLeft;
+        var y = e.pageY - this.grid.offsetTop + this.container.scrollTop;;
+        this.processClick(x, y);
+    }).bind(this);
+    
+    this.grid.onmouseout = (function() {
+        this.piano.drawNote(this.pastKey, false);
+    }).bind(this);
 }
 
 
 Grid.prototype.getKeyIndex = function(x, y) {
     var keyIndex = Math.floor((y - this.startY)/ this.keyHeight);
-    //console.log(keyIndex);
     return keyIndex;
-   // return this.keys[keyIndex];
 }
 
 Grid.prototype.drawNote = function(x, y, height, width) {
-
-    //console.log(xPosition);
     this.noteContext.fillStyle = '#F00';
-    //console.log(this.startY + keyIndex * this.keyHeight);
     this.noteContext.fillRect(x, y, height, width);
     this.noteContext.strokeRect(x, y, height, width);
-    
-    //this.noteContext.save();
-
- // Use the identity matrix while clearing the canvas
-    //this.noteContext.setTransform(1, 0, 0, 1, 0, 0);
-    //this.noteContext.lineWidth = 1;
-    //this.noteContext.clearRect(x, y, height + 1, width + 1);
-
- // Restore the transform
-    //this.noteContext.restore();
-    
-    /*this.noteContext.lineWidth = 0;
-    this.noteContext.clearRect(x, y, height, width); */
 }
 
 Grid.prototype.processClick = function(x, y) {
     var cellLocation = Math.floor(x / this.cellWidth) * this.cellWidth;
     var notePixelLength = this.currentNoteDuration / this.cellBeatLength * this.cellWidth;
     var cellLocationOffset = Math.floor(x % this.cellWidth  / (this.smallestBeatIncrement * this.cellWidth / this.cellBeatLength)) *  this.smallestPixelBeatIncrement;
-    //* this.cellWidth * this.smallestBeatIncrement;
     var xPosition = cellLocation + cellLocationOffset;
     var keyIndex = Math.floor((y - this.startY)/ this.keyHeight);
     if (keyIndex < 0) {
@@ -388,7 +349,6 @@ Grid.prototype.processClick = function(x, y) {
     
     var beatNumber = xPosition * this.cellBeatLength / this.cellWidth;
     var noteToDraw = new DrawnNote(xPosition, yPosition, notePixelLength, true);
-    //this.drawNote(xPosition, yPosition, notePixelLength, this.keyHeight);
     var currentIndex = xPosition / this.smallestPixelBeatIncrement;
     var durationInIncrements = this.currentNoteDuration / this.smallestBeatIncrement;
     var noteToDelete = this.checkSameNote(noteToDraw, this.noteXLookup[currentIndex]);    
@@ -400,16 +360,7 @@ Grid.prototype.processClick = function(x, y) {
             this.removeNote(noteToDelete.x, yPosition, this.noteXLookup[i]);
         }
         this.drawNotes();
-        /*
-        for(var i = 0; i < this.noteXLookup.length; i++) {
-            if (this.noteXLookup[i].length > 0)
-                console.log(i + " " + this.noteXLookup[i]);
-        } */
-        //console.log(this.noteXLookup);
         this.piano.track.removeNote(this.keys[keyIndex].frequency, noteToDelete.x * this.cellBeatLength / this.cellWidth, this.currentNoteDuration, 1);
-        //for (var i = currentIndex)
-        /*this.removeNote(yPosition, this.noteXLookup[currentIndex]);
-        this.piano.track.removeNote(this.keys[keyIndex].frequency, beatNumber, this.currentNoteDuration, 1); */
     }
     else {
         this.addNotes(currentIndex, durationInIncrements, noteToDraw);
@@ -417,38 +368,6 @@ Grid.prototype.processClick = function(x, y) {
         this.piano.track.playNote(this.keys[keyIndex].frequency, 0, this.currentNoteDuration, 1);       
         this.piano.track.addNote(new Note(this.keys[keyIndex].frequency, beatNumber, this.currentNoteDuration, 1));
     }
-
-    
-    
-    /*if (this.noteXLookup[currentIndex].length == 0) {
-        this.noteXLookup[currentIndex] = [noteToDraw];
-        for (var i = 1; i < durationInIncrements; i++) {
-            console.log(i);
-        }
-        
-        //this.drawNote(xPosition, yPosition, notePixelLength, this.keyHeight);
-        //this.piano.track.playNote(this.keys[keyIndex].frequency, 0, this.currentNoteDuration, 1);       
-        //this.piano.track.addNote(new Note(this.keys[keyIndex].frequency, beatNumber, this.currentNoteDuration, 1));
-       // console.log(durationInIncrements);
-    }*/
-   /* else {
-        if (this.checkSameNote(noteToDraw, this.noteXLookup[currentIndex])) { //remove note
-            //console.log(currentIndex);
-            
-            this.removeNote(yPosition, this.noteXLookup[currentIndex]);
-            this.drawNotes();
-            this.piano.track.removeNote(this.keys[keyIndex].frequency, beatNumber, this.currentNoteDuration, 1);
-        }
-        else { //add note
-            this.noteXLookup[currentIndex][this.noteXLookup[currentIndex].length] = noteToDraw; 
-            this.drawNote(xPosition, yPosition, notePixelLength, this.keyHeight);
-            this.piano.track.playNote(this.keys[keyIndex].frequency, 0, this.currentNoteDuration, 1);       
-            this.piano.track.addNote(new Note(this.keys[keyIndex].frequency, beatNumber, this.currentNoteDuration, 1));
-        }
-
-        //console.log(this.noteXLookup);
-
-    }    */
 }
 
 Grid.prototype.addNotes = function(currentIndex, durationIncrements, noteToDraw) {
@@ -467,7 +386,6 @@ Grid.prototype.addNotes = function(currentIndex, durationIncrements, noteToDraw)
 }
 
 Grid.prototype.removeNote = function(x, y, notes) {
-    //console.log(y);
     for (var i = 0; i < notes.length; i++) {
         if(notes[i].y == y && notes[i].x == x) {
             notes.splice(i ,1);
@@ -485,6 +403,7 @@ Grid.prototype.checkSameNote = function(noteToDraw, notes) {
 }
 
 Grid.prototype.drawNotes = function() {
+    //console.log(this.noteXLookup);
     //this.noteContext.save();
     //this.noteContext.setTransform(1, 0, 0, 1, 0, 0);
     this.noteContext.clearRect(0, 0, this.width, this.height);
@@ -529,22 +448,26 @@ Controls.prototype.addListeners = function() {
     }, false);
     
     this.tempoButton.onblur = (function() {
-        if (this.tempoButton.valueAsNumber < 30) {
+        var val = parseInt(this.tempoButton.value, 10);
+        console.log(val);
+        if (val < 30 || isNaN(val)) {
             this.tempoButton.value = this.song.tempo;
         }
         else {
-            this.song.changeTempo(this.tempoButton.valueAsNumber);
+            this.song.changeTempo(val);
         }
 
     }.bind(this));
 
     for (var i = 0; i < this.noteLengthsElements.length; i++) {
-        this.noteLengthsElements[i].addEventListener('click', this.addNoteLength.bind(this, this.noteLengths[i], this.noteLengthsElements[i]), false);
+        this.noteLengthsElements[i].addEventListener('click', this.changeNoteLength.bind(this, this.noteLengths[i], this.noteLengthsElements[i]), false);
     }    
 } 
 
-Controls.prototype.addNoteLength = function(length, element) {
-    this.grid.currentNoteDuration = length;
+Controls.prototype.changeNoteLength = function(length, element) {
+    element = element || this.noteLengthsElements[this.noteLengths.indexOf(length)];
+
+    this.sequencer.getCurrentGrid().currentNoteDuration = length;
     for (var i = 0; i < this.noteLengthsElements.length; i++) {
         this.noteLengthsElements[i].style.border = "outset";
     }
@@ -556,44 +479,58 @@ Controls.prototype.addTrack = function(track) {
     this.tracksElement.options[this.tracksElement.options.length]= new Option(track, track);
 }
 
-
-
-
 var Sequencer = function () {
     var song = new Song();
-    this.instruments = [Synth1, Synth2, Synth3];
-    this.instrumentNames = ["piano", "harpsichord", "percussion"];
+    this.instruments = instrumentList;
     this.tracks = [];
-    for (var i = 0; i < 3; i++) {
-        this.tracks[i] = song.createTrack(this.instruments[i]);
+    this.trackNames = [];
+    this.pianos = [];
+    this.grids = [];
+    this.index = 0;
+
+    var i = 0;
+    for (var key in instrumentList) {
+        this.tracks[i] = song.createTrack(this.instruments[key].playFunction);
+        this.trackNames[i] = key;
+        this.pianos[i] = new Piano(20, 40, 30, this.tracks[i]);
+        this.grids[i] = new Grid();
+        i++;
     }
     
-    this.piano = new Piano(20, 40, 30, this.tracks[0]);
-        
-    this.piano.drawPiano('c', 7, 60);         
-    var grid = new Grid(this.piano);
-    grid.drawGrid(100, 1);
-       
-    var controls = new Controls(song, this.piano, grid, this);
-    controls.addListeners();
-    for (var i = 0; i < this.instrumentNames.length; i++) {
-        controls.addTrack(this.instrumentNames[i]);
+    //menu   
+    this.controls = new Controls(song, this.piano, grid, this);
+    this.controls.addListeners();    
+    
+    this.drawMain(this.tracks[this.index]);
+    
+    for (var key in instrumentList) {
+        this.controls.addTrack(key);
     }
+}
+
+Sequencer.prototype.drawMain = function(track) {
+    this.index = this.tracks.indexOf(track);
+    this.pianos[this.index].drawPiano('c', 7, 60);
+    this.grids[this.index].drawGrid(100, 1, this.pianos[this.index]);
+    this.grids[this.index].drawNotes();
+    this.controls.changeNoteLength(this.grids[this.index].currentNoteDuration);   
+}
+
+Sequencer.prototype.getCurrentTrack = function() {
+    return this.tracks[this.index];
+}
+
+Sequencer.prototype.getCurrentGrid = function() {
+    return this.grids[this.index];
 }
 
 Sequencer.prototype.changeTrack = function(track) {
-    this.piano.track = this.tracks[this.instrumentNames.indexOf(track)];
-    //console.log(this.tracks[this.instrumentNames.indexOf(track)].instrument);
-    //this.tracks[this.instrumentNames.indexOf(track)].instrument = this.instruments[this.instrumentNames.indexOf(track)];
-    this.tracks[0].instrument = this.instruments[this.instrumentNames.indexOf(track)];
+    this.drawMain(this.tracks[this.trackNames.indexOf(track)]);
 }
 
 var initialize = function(startNote) {
-    //var mainHeight = window.innerHeight document.getElementById();
     var menuHeight = document.getElementById('menu').clientHeight;
     var counterHeight = document.getElementById('measure-counter').clientHeight;
-    //var measureCounterHeight = document.getElementById('measure-counter').clientHeight;
-    //var height = window.innerHeight - menuHeight - measureCounterHeight - 10;
     var height = window.innerHeight - menuHeight - counterHeight - 20;
     document.getElementById('main').style.height = height + "px";
     document.getElementById('quarter').style.border = "inset";
