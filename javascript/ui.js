@@ -449,7 +449,6 @@ Controls.prototype.addListeners = function() {
     
     this.tempoButton.onblur = (function() {
         var val = parseInt(this.tempoButton.value, 10);
-        console.log(val);
         if (val < 30 || isNaN(val)) {
             this.tempoButton.value = this.song.tempo;
         }
@@ -480,7 +479,7 @@ Controls.prototype.addTrack = function(track) {
 }
 
 var Sequencer = function () {
-    var song = new Song();
+    this.song = new Song();
     this.instruments = instrumentList;
     this.tracks = [];
     this.trackNames = [];
@@ -490,7 +489,7 @@ var Sequencer = function () {
 
     var i = 0;
     for (var key in instrumentList) {
-        this.tracks[i] = song.createTrack(this.instruments[key].playFunction);
+        this.tracks[i] = this.song.createTrack(this.instruments[key].playFunction);
         this.trackNames[i] = key;
         this.pianos[i] = new Piano(20, 40, 30, this.tracks[i]);
         this.grids[i] = new Grid();
@@ -498,7 +497,7 @@ var Sequencer = function () {
     }
     
     //menu   
-    this.controls = new Controls(song, this.piano, grid, this);
+    this.controls = new Controls(this.song, this.piano, grid, this);
     this.controls.addListeners();    
     
     this.drawMain(this.tracks[this.index]);

@@ -10,8 +10,50 @@
             //console.time('foo');
             initialize();
             var sequencer = new Sequencer();
+            
+            try {
+                var notes = JSON.parse(localStorage.getItem('notes'));
+                var drawnNotes = JSON.parse(localStorage.getItem('drawnNotes'));
+                var tempo = localStorage.getItem('tempo');
+                
+                if(tempo != null && tempo != undefined) {
+                    sequencer.song.changeTempo(tempo);
+                    document.getElementById('tempo').value = tempo;
+                }
+                if (notes != null && notes != undefined) {
+                    sequencer.tracks[0].notes = JSON.parse(localStorage.getItem('notes'));
+                }
+                if (drawnNotes != null && drawnNotes != undefined) {
+                    sequencer.grids[0].noteXLookup = JSON.parse(localStorage.getItem('drawnNotes'));
+                    sequencer.grids[0].drawNotes();
+                }
+            }
+            catch(err){
+                console.log('derp');
+                
+                
+            }
 
-           // console.timeEnd('foo'); 
+            setInterval(function() {
+                localStorage.setItem('notes', JSON.stringify(sequencer.tracks[0].notes));
+                localStorage.setItem('drawnNotes', JSON.stringify(sequencer.grids[0].noteXLookup));
+                localStorage.setItem('tempo', sequencer.song.tempo);
+            }, 1000);
+            
+            //console.log(JSON.stringify(sequencer.tracks[0].notes));
+            //var testObject = { 'one': 1, 'two': 2, 'three': 3 };
+
+            //localStorage['foo'] = 'bar';
+            
+            //console.log(localStorage['testObject']);
+            // Put the object into storage
+            //localStorage.setItem('testObject', JSON.stringify(testObject));
+    
+            // Retrieve the object from storage
+            //var retrievedObject = localStorage.getItem('testObject');
+    
+            //console.log('retrievedObject: ', JSON.parse(retrievedObject));
+            // console.timeEnd('foo'); 
         }
         </script>
         <meta charset="utf-8" />
