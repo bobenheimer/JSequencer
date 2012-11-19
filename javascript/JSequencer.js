@@ -41,6 +41,10 @@ Track.prototype.removeNote = function(frequency, beat, duration, volume) {
     }
 }
 
+Track.prototype.removeAll = function() {
+    this.notes = [];
+}
+
 /**
  * Play the song
  * may want to add startbeat as an instance variable or something and then have a setter function

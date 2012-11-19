@@ -24,6 +24,11 @@ body {
     margin: 5px;
     display: inline-block;
 }
+
+#clear {
+    
+}
+
 img {
     vertical-align: middle;
 }

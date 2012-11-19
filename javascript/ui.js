@@ -329,13 +329,20 @@ Grid.prototype.getKeyIndex = function(x, y) {
     return keyIndex;
 }
 
+Grid.prototype.removeAll = function() {
+    for(var i = 0; i < this.noteXLookup.length; i++) {
+        this.noteXLookup[i] = [];
+    }
+    this.drawNotes();
+}
+
 Grid.prototype.drawNote = function(x, y, height, width) {
     this.noteContext.fillStyle = '#F00';
     this.noteContext.fillRect(x, y, height, width);
     this.noteContext.strokeRect(x, y, height, width);
 }
 
-Grid.prototype.processClick = function(x, y) {
+Grid.prototype.processClick = function(x, y, draw) {
     var cellLocation = Math.floor(x / this.cellWidth) * this.cellWidth;
     var notePixelLength = this.currentNoteDuration / this.cellBeatLength * this.cellWidth;
     var cellLocationOffset = Math.floor(x % this.cellWidth  / (this.smallestBeatIncrement * this.cellWidth / this.cellBeatLength)) *  this.smallestPixelBeatIncrement;
@@ -364,9 +371,27 @@ Grid.prototype.processClick = function(x, y) {
     }
     else {
         this.addNotes(currentIndex, durationInIncrements, noteToDraw);
-        this.drawNote(xPosition, yPosition, notePixelLength, this.keyHeight);
-        this.piano.track.playNote(this.keys[keyIndex].frequency, 0, this.currentNoteDuration, 1);       
+        if (draw == undefined || draw == true) {
+            this.drawNote(xPosition, yPosition, notePixelLength, this.keyHeight);
+            this.piano.track.playNote(this.keys[keyIndex].frequency, 0, this.currentNoteDuration, 1);                
+        }  
         this.piano.track.addNote(new Note(this.keys[keyIndex].frequency, beatNumber, this.currentNoteDuration, 1));
+    }
+}
+
+
+Grid.prototype.addNote = function(note) {
+    console.log(this.keys);
+    for (var i = 0; i < this.keys.length; i++) {
+        if (this.keys[i].frequency == note.frequency) {
+            var currentIndex = note.beat * this.cellWidth / this.cellBeatLength / this.smallestPixelBeatIncrement;
+            var durationInIncrements = note.duration / this.smallestBeatIncrement;
+            var notePixelLength = note.duration / this.cellBeatLength * this.cellWidth;
+            var noteToDraw = new DrawnNote(note.beat * this.cellWidth / this.cellBeatLength, this.startY + i * this.keyHeight, notePixelLength, true);
+            this.addNotes(currentIndex, durationInIncrements, noteToDraw);
+            console.log(this.noteXLookup);
+            //this.processClick(note.beat * this.cellWidth / this.cellBeatLength, this.startY + i * this.keyHeight , false);
+        }
     }
 }
 
@@ -435,6 +460,17 @@ var Controls = function(song, piano, grid, sequencer) {
     this.noteLengths = [4, 2, 1, 0.5, 0.25];
     this.tracks = [];
     this.tracksElement = document.getElementById('tracks');
+    this.clearElement = document.getElementById('clear');
+    this.clearElement.onclick = (function() {
+        var del = confirm('Are you sure you want to delete track ' + sequencer.getCurrentTrackName());
+        if (del) {
+            var track = this.sequencer.getCurrentTrack();
+            var grid = this.sequencer.getCurrentGrid();
+            track.removeAll();
+            grid.removeAll();
+            
+        }
+    }).bind(this);  
     this.tracksElement.onchange = (function() {
         var instrument = this.tracksElement.options[this.tracksElement.selectedIndex].value;
         sequencer.changeTrack(instrument);
@@ -499,12 +535,33 @@ var Sequencer = function () {
     //menu   
     this.controls = new Controls(this.song, this.piano, grid, this);
     this.controls.addListeners();    
-    
     this.drawMain(this.tracks[this.index]);
+    
+    /*for (var i = 0; i < this.tracks.length; i++) {
+        this.drawMain(this.tracks[i]);
+    }*/
+
     
     for (var key in instrumentList) {
         this.controls.addTrack(key);
     }
+    
+
+
+    /*this.allNotes = [];
+    //this.allDrawnNotes = [];
+    for (var i = 0; i < this.tracks.length; i++) {
+        this.allNotes[i] = this.tracks[i].notes;
+        //this.allDrawnNotes[i] = this.grids[i].noteXLookup;
+    }
+
+    this.getSaved();
+    this.changeTrack("piano");
+    setInterval(function() {
+        this.save();
+
+    }.bind(this), 1000);*/
+
 }
 
 Sequencer.prototype.drawMain = function(track) {
@@ -523,8 +580,67 @@ Sequencer.prototype.getCurrentGrid = function() {
     return this.grids[this.index];
 }
 
+Sequencer.prototype.getCurrentTrackName = function() {
+    return this.trackNames[this.index];
+}
+
 Sequencer.prototype.changeTrack = function(track) {
     this.drawMain(this.tracks[this.trackNames.indexOf(track)]);
+}
+
+Sequencer.prototype.save = function() {
+    console.log(this.allNotes);
+    localStorage.setItem('notes', JSON.stringify(this.allNotes));
+    //var startTime = new Date().getTime();                    
+    //while (new Date().getTime() < startTime + 500);
+    //localStorage.setItem('allDrawnNotes', JSON.stringify(this.allDrawnNotes));
+    localStorage.setItem('tempo', this.song.tempo);
+}
+
+Sequencer.prototype.getSaved = function() {    
+    var notes = JSON.parse(localStorage.getItem('notes'));
+    var tempo = localStorage.getItem('tempo');
+    console.log(notes);
+    for (var i = 0; i < notes.length; i++) {
+        //this.tracks[i].notes = notes[i];
+        for (var j = 0; j < notes[i].length; j++) { 
+            this.grids[i].addNote(notes[i][j]);
+        }  
+        //this.tracks[i];
+    }
+    this.getCurrentGrid().drawNotes();
+    
+    if(tempo != null && tempo != undefined) {
+        this.song.changeTempo(tempo);
+        document.getElementById('tempo').value = tempo;
+    }
+    
+
+    /*
+    try {
+        var notes = JSON.parse(localStorage.getItem('allNotes'));
+        var drawnNotes = JSON.parse(localStorage.getItem('allDrawnNotes'));
+        var tempo = localStorage.getItem('tempo');
+        
+        if(tempo != null && tempo != undefined) {
+            this.song.changeTempo(tempo);
+            document.getElementById('tempo').value = tempo;
+        }
+        if (notes != null && notes != undefined) {
+            for (var i = 0; i < notes.length; i++) {
+                this.tracks[i].notes = notes[i];
+            }
+        }
+        if (drawnNotes != null && drawnNotes != undefined) {
+            for (var i = 0; i < drawnNotes.length; i++) {
+                this.grids[i].noteXLookup = drawnNotes[i];
+            }
+            this.getCurrentGrid().drawNotes();
+        }
+    }
+    catch(err){
+           
+    } */
 }
 
 var initialize = function(startNote) {
