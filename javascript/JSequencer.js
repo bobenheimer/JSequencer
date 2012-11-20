@@ -150,3 +150,10 @@ Song.prototype.play = function(beat) {
 	}
 }
 
+Song.prototype.getAllNotes = function() {
+    var allNotes = [];
+    for (var i = 0; i < this.tracks.length; i++) {
+        allNotes[i] = this.tracks[i].notes;
+    }
+    return allNotes;
+}

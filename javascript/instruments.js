@@ -1,4 +1,40 @@
 var instrumentList = {
+        moog: {
+            playFunction: function(audiolet, frequency, duration, volume) {
+                AudioletGroup.apply(this, [audiolet, 0, 1]);
+                release = 0.1 * duration;
+                // Basic wave
+                //var attack = 0.01;
+                //var release = 0.5 * duration;
+                this.sine = new Sine(audiolet, frequency);
+                this.trigger = new TriggerControl(audiolet);
+                // Gain envelope
+                this.gain = new Gain(audiolet, 1);
+                /*this.env = new Envelope(audiolet, 1, [0, 1, 0.5, 0], [0.1, 1, 0.5], 5,
+                    function() {
+                        audiolet.scheduler.addRelative(0, this.remove.bind(this));
+                    }.bind(this)
+                ); */
+                
+                this.env = new ADSREnvelope(audiolet, 1, 0.1, 1, 1, 1,
+                        function() {
+                            audiolet.scheduler.addRelative(0, this.remove.bind(this));
+                        }.bind(this)
+                    );
+                
+                this.envMulAdd = new MulAdd(audiolet, 0.2 * volume, 0);
+
+                // Main signal path
+                this.sine.connect(this.gain);
+                this.gain.connect(this.outputs[0]);
+
+                // Envelope
+                this.env.connect(this.gain, 0, 1);
+                this.trigger.connect(this.env);
+                //this.envMulAdd.connect(this.gain, 0, 1);
+            }
+        },
+        
         piano: {
             playFunction: function(audiolet, frequency, duration, volume) {
                 AudioletGroup.apply(this, [audiolet, 0, 1]);
@@ -97,7 +133,9 @@ var instrumentList = {
                 this.envMulAdd.connect(this.gain, 0, 1);
                 this.gain.connect(this.outputs[0]);
             }            
-        } 
+        },
+        
+
 
 };
 

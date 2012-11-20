@@ -224,7 +224,7 @@ var Grid = function() {
 }
 
 
-Grid.prototype.drawGrid = function(cellWidth, cellBeatLength, piano) {
+Grid.prototype.drawGrid = function(cellWidth, cellBeatLength, piano, notes) {
     this.piano = piano;
     this.keyHeight = this.piano.blackOffset * 2;
     this.keys = piano.keys;
@@ -296,6 +296,12 @@ Grid.prototype.drawGrid = function(cellWidth, cellBeatLength, piano) {
         }
     }
 
+    if (notes) {
+        for (var i = 0; i < notes.length; i++) {
+            this.addNote(notes[i]);
+            //console.log(notes[i]);
+        }
+    }
     this.grid.onmousemove = (function(e) {
         var x = e.pageX - this.grid.offsetLeft + this.container.scrollLeft;
         var y = e.pageY - this.grid.offsetTop + this.container.scrollTop;
@@ -381,7 +387,7 @@ Grid.prototype.processClick = function(x, y, draw) {
 
 
 Grid.prototype.addNote = function(note) {
-    console.log(this.keys);
+    //console.log(this.keys);
     for (var i = 0; i < this.keys.length; i++) {
         if (this.keys[i].frequency == note.frequency) {
             var currentIndex = note.beat * this.cellWidth / this.cellBeatLength / this.smallestPixelBeatIncrement;
@@ -389,7 +395,6 @@ Grid.prototype.addNote = function(note) {
             var notePixelLength = note.duration / this.cellBeatLength * this.cellWidth;
             var noteToDraw = new DrawnNote(note.beat * this.cellWidth / this.cellBeatLength, this.startY + i * this.keyHeight, notePixelLength, true);
             this.addNotes(currentIndex, durationInIncrements, noteToDraw);
-            console.log(this.noteXLookup);
             //this.processClick(note.beat * this.cellWidth / this.cellBeatLength, this.startY + i * this.keyHeight , false);
         }
     }
@@ -535,7 +540,13 @@ var Sequencer = function () {
     //menu   
     this.controls = new Controls(this.song, this.piano, grid, this);
     this.controls.addListeners();    
-    this.drawMain(this.tracks[this.index]);
+    this.getSaved();
+    console.log(this.index);
+    for (var i = 0; i < this.tracks.length; i++) {
+        this.drawMain(this.tracks[i], this.allSavedNotes[i]);
+    }
+    console.log(this.index);
+    this.drawMain(this.tracks[0]);
     
     /*for (var i = 0; i < this.tracks.length; i++) {
         this.drawMain(this.tracks[i]);
@@ -556,41 +567,31 @@ var Sequencer = function () {
     }
 
     this.getSaved();
-    this.changeTrack("piano");
+    this.changeTrack("piano");*/
+
     setInterval(function() {
         this.save();
 
-    }.bind(this), 1000);*/
+    }.bind(this), 1000);
 
 }
 
-Sequencer.prototype.drawMain = function(track) {
+Sequencer.prototype.drawMain = function(track, savedNotes) {
     this.index = this.tracks.indexOf(track);
     this.pianos[this.index].drawPiano('c', 7, 60);
-    this.grids[this.index].drawGrid(100, 1, this.pianos[this.index]);
+    this.grids[this.index].drawGrid(100, 1, this.pianos[this.index], savedNotes);
+    //console.log(this.grids[this.index].notes);
     this.grids[this.index].drawNotes();
-    this.controls.changeNoteLength(this.grids[this.index].currentNoteDuration);   
+    this.controls.changeNoteLength(this.grids[this.index].currentNoteDuration);
+    //if (savedNotes)
 }
 
-Sequencer.prototype.getCurrentTrack = function() {
-    return this.tracks[this.index];
-}
 
-Sequencer.prototype.getCurrentGrid = function() {
-    return this.grids[this.index];
-}
-
-Sequencer.prototype.getCurrentTrackName = function() {
-    return this.trackNames[this.index];
-}
-
-Sequencer.prototype.changeTrack = function(track) {
-    this.drawMain(this.tracks[this.trackNames.indexOf(track)]);
-}
 
 Sequencer.prototype.save = function() {
-    console.log(this.allNotes);
-    localStorage.setItem('notes', JSON.stringify(this.allNotes));
+    //this.allNotes
+    //console.log(this.song.getAllNotes());
+    localStorage.setItem('notes', JSON.stringify(this.song.getAllNotes()));
     //var startTime = new Date().getTime();                    
     //while (new Date().getTime() < startTime + 500);
     //localStorage.setItem('allDrawnNotes', JSON.stringify(this.allDrawnNotes));
@@ -598,17 +599,18 @@ Sequencer.prototype.save = function() {
 }
 
 Sequencer.prototype.getSaved = function() {    
+    this.allSavedNotes = JSON.parse(localStorage.getItem('notes'));
     var notes = JSON.parse(localStorage.getItem('notes'));
     var tempo = localStorage.getItem('tempo');
-    console.log(notes);
+    //console.log(notes);
     for (var i = 0; i < notes.length; i++) {
-        //this.tracks[i].notes = notes[i];
-        for (var j = 0; j < notes[i].length; j++) { 
-            this.grids[i].addNote(notes[i][j]);
-        }  
+        this.tracks[i].notes = notes[i];
+        //for (var j = 0; j < notes[i].length; j++) { 
+            //this.grids[i].addNote(notes[i][j]);
+       // }  
         //this.tracks[i];
     }
-    this.getCurrentGrid().drawNotes();
+    //this.getCurrentGrid().drawNotes();
     
     if(tempo != null && tempo != undefined) {
         this.song.changeTempo(tempo);
@@ -643,9 +645,28 @@ Sequencer.prototype.getSaved = function() {
     } */
 }
 
+
+Sequencer.prototype.getCurrentTrack = function() {
+    return this.tracks[this.index];
+}
+
+Sequencer.prototype.getCurrentGrid = function() {
+    return this.grids[this.index];
+}
+
+Sequencer.prototype.getCurrentTrackName = function() {
+    return this.trackNames[this.index];
+}
+
+Sequencer.prototype.changeTrack = function(track) {
+    this.drawMain(this.tracks[this.trackNames.indexOf(track)]);
+}
+
 var initialize = function(startNote) {
     var menuHeight = document.getElementById('menu').clientHeight;
     var counterHeight = document.getElementById('measure-counter').clientHeight;
+    //var footerHeight = document.getElementById('about').clientHeight;
+   // var height = window.innerHeight - menuHeight - counterHeight - footerHeight - 20;
     var height = window.innerHeight - menuHeight - counterHeight - 20;
     document.getElementById('main').style.height = height + "px";
     document.getElementById('quarter').style.border = "inset";

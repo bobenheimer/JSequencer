@@ -9,18 +9,22 @@ html, body  {
 
 body {
     background: #E5E5E5;
+    font-family: helvetica;
 }
 
 /*------------------------------------------------MENU-----------------------------------------------------*/
 #menu {
-   /* height: 100px; */
-    width:100%;
     background-color: #335086;
-    margin-bottom: 5px;
-    /*float: left;*/
 }
 
-#menu>div {
+#options {
+    /* height: 100px; */
+    /*width:100%;*/
+
+    margin-bottom: 5px;
+}
+
+#options>div {
     margin: 5px;
     display: inline-block;
 }
@@ -33,6 +37,10 @@ img {
     vertical-align: middle;
 }
 
+#about {
+    background: #FFF;
+
+}
 
 #song-controls {
     background-color: #FFF;
@@ -90,7 +98,7 @@ img {
 
 #measure-counter {
     position: relative;
-    width: 2000px;
+    width: 3200px;
     height: 20px;   
     padding-right:90px;
 }
@@ -116,7 +124,7 @@ img {
 #grid {
     position: relative;
     height: 1780px;
-    width: 2000px;
+    width: 3000px;
 }
 
 #canvas-notes {
