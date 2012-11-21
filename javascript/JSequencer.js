@@ -78,7 +78,7 @@ Track.prototype.play = function(beat) {
  */
 Track.prototype.playNote = function(frequency, beat, duration, volume) {
     var note = new Note(frequency, beat, duration, volume);
-    var noteToPlay = new this.instrument(this.audiolet, note.frequency, note.duration, note.volume);
+    var noteToPlay = new this.instrument(this.audiolet, note.frequency, note.duration, note.volume, this.audiolet.scheduler.bpm);
     noteToPlay.connect(this.audiolet.output);
 }
 

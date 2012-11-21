@@ -4801,10 +4801,10 @@ MulAdd.prototype.generate = function() {
 
     var mul = this.mul.getValue();
     var add = this.add.getValue();
-
     var numberOfChannels = input.samples.length;
     for (var i = 0; i < numberOfChannels; i++) {
         output.samples[i] = input.samples[i] * mul + add;
+        //console.log(output.samples[i]);
     }
 };
 

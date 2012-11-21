@@ -613,7 +613,7 @@ Sequencer.prototype.getSaved = function() {
     //this.getCurrentGrid().drawNotes();
     
     if(tempo != null && tempo != undefined) {
-        this.song.changeTempo(tempo);
+        this.song.changeTempo(parseInt(tempo, 10));
         document.getElementById('tempo').value = tempo;
     }
     
