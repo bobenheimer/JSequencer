@@ -27,42 +27,6 @@ var instrumentList = {
         },
             
             
-
-        
-        harpsichord: { 
-            playFunction: function(audiolet, frequency, duration, volume) {
-                AudioletGroup.apply(this, [audiolet, 0, 1]);
-                
-                var release = 0.5 * duration;
-                // Basic wave
-                this.sine = new Saw(audiolet, frequency);
-                
-                this.filter = new DampedCombFilter(audiolet, 0.06, 0.02, 0.04, 0.2);
-                
-                //this.filter = new Reverb(audiolet, 1.5, 0.5, 0.8);
-                
-                // Gain envelope
-                this.gain = new Gain(audiolet, 0.07);
-                this.env = new PercussiveEnvelope(audiolet, 0.01, 0.05, release,
-                  function() {
-                    this.audiolet.scheduler.addRelative(0, this.remove.bind(this));
-                  }.bind(this)
-                );
-                
-                this.envMulAdd = new MulAdd(audiolet, 0.1 * volume, 0);
-
-                // Main signal path
-                //this.sine.connect(this.gain);
-                this.sine.connect(this.filter);
-                this.filter.connect(this.gain);    
-                this.gain.connect(this.outputs[0]);
-
-                // Envelope
-                this.env.connect(this.envMulAdd);
-                this.envMulAdd.connect(this.filter);
-            }
-                        
-        },
         
         RockOrgan: {
             playFunction: function(audiolet, frequency, duration, volume, bpm) {
@@ -114,7 +78,43 @@ var instrumentList = {
                 this.finalGain.connect(this.filter);
                 this.filter.connect(this.outputs[0]);
             }
-        },        
+        },    
+        
+        harpsichord: { 
+            playFunction: function(audiolet, frequency, duration, volume) {
+                AudioletGroup.apply(this, [audiolet, 0, 1]);
+                
+                var release = 0.5 * duration;
+                // Basic wave
+                this.sine = new Saw(audiolet, frequency);
+                
+                this.filter = new DampedCombFilter(audiolet, 0.06, 0.02, 0.04, 0.2);
+                
+                //this.filter = new Reverb(audiolet, 1.5, 0.5, 0.8);
+                
+                // Gain envelope
+                this.gain = new Gain(audiolet, 0.07);
+                this.env = new PercussiveEnvelope(audiolet, 0.01, 0.05, release,
+                  function() {
+                    this.audiolet.scheduler.addRelative(0, this.remove.bind(this));
+                  }.bind(this)
+                );
+                
+                this.envMulAdd = new MulAdd(audiolet, 0.1 * volume, 0);
+
+                // Main signal path
+                //this.sine.connect(this.gain);
+                this.sine.connect(this.filter);
+                this.filter.connect(this.gain);    
+                this.gain.connect(this.outputs[0]);
+
+                // Envelope
+                this.env.connect(this.envMulAdd);
+                this.envMulAdd.connect(this.filter);
+            }
+                        
+        },
+    
         percussion: {
             playFunction: function(audiolet, frequency, duration, volume) {
                 AudioletGroup.apply(this, [audiolet, 0, 1]);
